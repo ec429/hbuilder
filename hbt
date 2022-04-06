@@ -1,0 +1,138 @@
+General Arrangement
+: Four Engined Bombers
+:: allows engines.number > 3, tare penalty is 90kg
+: Mature Four-Engine Layout (Four Engined Bombers)
+:: reduces tare penalty to 40kg
+: Crew Accommodation [legacy fleet]
+:: 75kg crewman incidentals
+: Crew Stations
+:: 80kg crewman incidentals
+:: +10% crew effective skill
+: Improved Crew Stations (Crew Stations)
+:: 60kg crewman incidentals
+
+Doctrine
+: High Altitude
+:: increase climb time to 45 mins
+
+Fuselage
+: Basic Fuselages [legacy fleet]
+#       NOR/SLE/SLA/GEO
+:: tare 1.5/1.0/0.9/1.7
+:: drag 5.0/3.0/7.2/5.4
+:: vuln 0.2/0.3/0.2/0.08
+:: wing tare factor 1.35
+: Improved Geodetics
+:: tare geodetic@1.4
+: Refined Fuselages
+:: tare normal@1.1
+:: tare slender@0.8
+:: drag normal@4.5
+:: drag slender@2.7
+:: drag slabby@6.8
+: Geodetic Streamlining (Improved Geodetics)
+:: drag geodetic@4.8
+: Fuselage Stressing Calcs (Refined Fuselages)
+:: tare normal@0.8
+:: tare slender@0.6
+:: tare slabby@0.5
+:: wing tare factor 1.25
+
+Wings
+: Cantilever Wings [legacy fleet]
+:: tare 1.5;1.2;0.55
+: Lightweight Wings
+:: tare 1.5;1.2;0.5
+: Improved Wing Structures (Lightweight Wings)
+:: tare 1.45;1.2;0.6
+: Wing Stressing Calcs (Improved Wing Structures)
+:: tare 1.4;1.1;0.9
+: Refined Aerofoils
+:: ld + 5%
+
+Fuel Systems
+: Fuel Tanks [legacy fleet]
+:: tare 0.12
+:: vuln 1.0
+: Self Sealing Tanks
+:: tare +10%
+:: vuln -50%
+: Lightweight Fuel Tanks
+:: tare 0.1
+: Improved Fuel Tanks (Lightweight Fuel Tanks)
+:: tare 0.09
+:: vuln 0.9
+
+Engines
+: Pre-War Engines [legacy fleet]
+:: Mercury XV
+:: Merlin IV
+:: tare factor 1.4
+: 1939 Engines [late legacy fleet]
+:: Pegasus XVIII
+:: Merlin X
+: X-24 Engines
+:: Vulture I
+: Vulture Reliability (X-24 Engines)
+:: Vulture V
+: V-12 Development
+:: Merlin XX
+: Two-Stage Supercharging (V-12 Development)
+:: Merlin 60
+: Sleeve Valve
+:: Hercules XI
+: Clean Entry
+:: engines.drag - 10%
+: Power Egg
+:: engines.serv - 10%
+:: engines.tare + 5%
+: Improved Engine Mountings
+:: tare factor 1.2
+
+Turrets and Gun Mountings
+: Basic Turrets [legacy fleet]
+:: NoseGun
+:: Nose
+:: Chin
+:: DorsalSingle
+:: DorsalAftSingle
+:: VentralAftSingle
+:: Beam
+:: Tail
+: Dustbin Turret [late legacy fleet]
+:: Ventral
+: Armament Improvements
+:: Dorsal
+:: DorsalAft
+:: VentralAft
+:: Waist
+: Quad Turrets (Armament Improvements)
+:: DorsalQuad
+:: TailQuad
+: Improved Ventral Turrets (Dustbin Turret)
+:: Ventral21
+: Ball Turret (Improved Ventral Turrets)
+:: VentralBall
+: Improved Hydraulics
+:: reduce guntare factor from 1.75 to 1.6
+: Turret Fairings (Armament Improvements)
+:: reduce gundrag factor from 24.0 to 18.0
+: Lightweight Ammo Tracks
+:: ammomass - 10%
+
+Bomb Carriage
+: Internal Bay [legacy fleet]
+:: 0.07/0.1/x
+:: factor 8000/2e5
+: High Capacity Bombs
+:: medium@0.09
+:: medium gains actual ability to carry cookie
+: Bomb Cells
+:: small@0.055
+: Large Bomb Bay (High Capacity Bombs)
+:: cookie@1.1
+:: factor 8000/3e5
+: Bomb Bay Structures (Large Bomb Bay)
+:: medium@0.08
+:: cookie@1.0
+:: factor 10000/3e5

@@ -1,0 +1,47 @@
+Manufacturer/Designer
+
+Each choice gives certain bonuses/maluses.
+* Avro
+  + reduced weight penalty for big/strong bomb bay
+  - cost slightly higher
+* Bristol
+  + better manœuvrability
+* de Havilland
+  + sleek fuselages
+* Handley Page
+* Short Bros
+  + cost is less sensitive to size
+  - increased tare
+* Supermarine
+  + extra speed
+  - slower development
+  "Supermarine are the experts in high-speed aviation.  But their development times are not so quick."
+* Vickers/Armstrongs
+
+Data
+
+Armstrongs
+: wing arpen goes down to 6.0 instead of 8.0
+: -20% mounting weight for Armstrong-Siddeley engines
+: -10% tare for FuseType.SLABBY
+Avro
+: bomb bay
+:: -8% for BBGirth.COOKIE
+:: factor base +1000
+: +5% to airframe cost (i.e. excl engines, turrets)
+Bristol
+: -20% mounting weight for Bristol engines
+: turn penalty for wing loading starts at 18 instead of 16
+dH
+: -10% drag for FuseType.NORMAL
+: +10% tare for FuseType.NORMAL
+HP
+: no specials at all?
+: hidden flaws (rudder)
+Shorts
+: +8% to core/fuse tare
+Supermarine
+: +5% to wing L/D
+: -10% to fuse drag
+Vickers
+: allows FuseType.GEODETIC
