@@ -68,7 +68,7 @@ engines = [Engine('Bristol', 'Mercury XV', 840, ENG_VULN_AIR_COOLED, 0.8, 0.8, 8
            Engine('Rolls-Royce', 'Merlin 60', 1565, ENG_VULN_LIQUID_COOLED, 0.5, 1.2, 2000, 3, 750 * kg, 105, "Two-stage supercharged Merlin, for high altitude use (e.g. Wellington VI, Mosquito IX)."),
            Engine('Bristol', 'Pegasus XVIII', 965, ENG_VULN_AIR_COOLED, 1.0, 0.8, 1200, 2, 1111, 84, "Supercharged radial developed from the Jupiter.  As used on Hampden and Wellington I."),
            Engine('Bristol', 'Hercules XI', 1500, ENG_VULN_AIR_COOLED, 0.9, 0.7, 1600, 1, 1929, 102, "14-cylinder two-row sleeve-valve radial."),
-           Engine('Rolls-Royce', 'Vulture I', 1760, ENG_VULN_LIQUID_COOLED, 3.0, 1.2, 1800, 2, 2450, 90, "Troubled X-24 engine as used on Manchester Mk I."),
+           Engine('Rolls-Royce', 'Vulture I', 1760, ENG_VULN_LIQUID_COOLED, 3.0, 1.5, 1800, 2, 2450, 90, "Troubled X-24 engine as used on Manchester Mk I."),
            Engine('Bristol', 'Hercules III', 1375, ENG_VULN_AIR_COOLED, 1.2, 0.9, 1400, 1, 1850, 104, "Early-model 14-cylinder two-row sleeve-valve radial."),
            Engine('Bristol', 'Hercules XVIII', 1675, ENG_VULN_AIR_COOLED, 0.8, 0.8, 2100, 1, 1940, 101, "Developed 14-cylinder two-row sleeve-valve radial."),
            Engine('Armstrong-Siddeley', 'Deerhound II', 1500, ENG_VULN_AIR_COOLED, 0.8, 0.8, 1200, 2, 1600, 93, "Triple-row 21-cylinder radial."), # made-up tare
@@ -117,6 +117,7 @@ class Guns(object):
 class NoseGun(Guns):
     name = 'Nose gun (single)'
     desc = 'Single .303 Vickers K or Browning in a nose turret or flexible mount.'
+    serv = 0.2
     tare = 25 # made-up figure
     drag = 4
     loxn = GunMount.NOSE
@@ -171,8 +172,8 @@ class DorsalQuad(Guns):
 class Ventral(Guns):
     name = 'Ventral "dustbin"'
     desc = 'Retractable mid-under turret with twin .303 Brownings, like FN.17.'
-    tare = 170
     serv = 1.0
+    tare = 170
     drag = 20
     loxn = GunMount.VENTRAL
     def coverage(self, direction):
@@ -378,7 +379,7 @@ class FuseType(enum.Enum):
     GEODETIC = 3
 
 class Bomber(object):
-    def __init__(self, engines, turrets, wing, crew, bay, fuel, manu, ftype=FuseType.NORMAL, haddock=False):
+    def __init__(self, engines, turrets, wing, crew, bay, fuel, manu, ftype=FuseType.NORMAL, haddock=False, sst=True):
         self.engines = engines
         self.engines.manu = manu
         self.turrets = turrets
@@ -391,6 +392,7 @@ class Bomber(object):
         self.wing.manu = manu
         self.ftype = ftype
         self.haddock = haddock # high altitude doctrine
+        self.sst = sst
         e, w = self.validate()
         if e:
             raise Exception(e)
@@ -430,6 +432,9 @@ class Bomber(object):
     @property
     def gunammo(self):
         return sum(g.ammomass for g in self.turrets)
+    @property
+    def gunserv(self):
+        return sum(g.serv / 100.0 for g in self.turrets)
     def rate_guns(self, schrage):
         de = 0
         for direction in CoverageDirection:
@@ -451,6 +456,25 @@ class Bomber(object):
     def rely2(self):
         return self.engines.rely2
     @property
+    def serv(self):
+        total = self.engines.serv * 6.0
+        total += self.gunserv
+        total += {FuseType.NORMAL: 3.0,
+                  FuseType.SLENDER: 6.4,
+                  FuseType.SLABBY: 2.7,
+                  FuseType.GEODETIC: 2.0}[self.ftype] / 100.0
+        if self.manu == Manu.SHORTS:
+            total += 0.15
+        return 1.0 - total
+    @property
+    def fail(self):
+        total = self.rely1 * 2.0 + self.rely2 * 30.0
+        total += {FuseType.NORMAL: 3.0,
+                  FuseType.SLENDER: 4.0,
+                  FuseType.SLABBY: 2.7,
+                  FuseType.GEODETIC: 2.0}[self.ftype] / 100.0
+        return total
+    @property
     def fuelmass(self):
         return self.engines.fuelrate * self.fuel
     @property
@@ -469,7 +493,7 @@ class Bomber(object):
                        FuseType.GEODETIC: 1.7}[self.ftype]
     @property
     def fuel_tare(self):
-        return self.fuelmass * 0.12
+        return self.fuelmass * 0.12 * (1.1 if self.sst else 1.0)
     @property
     def tare(self):
         total = self.core_tare
@@ -510,7 +534,8 @@ class Bomber(object):
         mf = {Manu.SHORTS: 0.8, Manu.AVRO: 1.05}.get(self.manu, 1.0)
         tf = {FuseType.SLENDER: 1.6,
               FuseType.SLABBY: 0.9}.get(self.ftype, 1.0)
-        return self.core_tare * mf * tf
+        ef = 2.0 if self.engines.number > 2 else 1.0
+        return self.core_tare * mf * tf * ef
     @property
     def fuse_cost(self):
         mf = {Manu.SHORTS: 0.8, Manu.AVRO: 1.05}.get(self.manu, 1.0)
@@ -522,10 +547,11 @@ class Bomber(object):
     @property
     def wing_cost(self):
         arpen = max(self.wing.ar, 6.0) / 6.0
-        if self.manu == Manu.SHORTS:
+        ef = 1.2 if self.engines.number > 3 else 1.0
+        if self.manu == Manu.SHORTS: # no ef penalty
             return math.pow(self.wing.tare, 1.1) * arpen / 5.0
         mf = {Manu.AVRO: 1.05}.get(self.manu, 1.0)
-        return math.pow(self.wing.tare, 1.2) * mf * arpen / 12.0
+        return math.pow(self.wing.tare, 1.2) * mf * arpen * ef / 12.0
     @property
     def cost(self):
         total = self.engines.cost
@@ -609,7 +635,7 @@ class Bomber(object):
         # engines.  fuse(geodetic).  fuel.  dc.
         base = self.engines.vuln + (0.08 if self.ftype == FuseType.GEODETIC else 0.3 if self.ftype == FuseType.SLENDER else 0.2)
         base *= max(4.0 - self.dc, 1.0)
-        base += self.fuel_ratio / (5.0 if self.ftype == FuseType.GEODETIC else 4.0)
+        base += self.fuel_ratio * (0.5 if self.sst else 1.0) / (5.0 if self.ftype == FuseType.GEODETIC else 4.0)
         return base
     def fight_factor(self, schrage=False):
         return math.pow(self.evade_factor, 0.7) * (self.vuln * 4.0 + self.rate_guns(schrage)) / 3.0
@@ -624,8 +650,8 @@ def statblock(b):
     print "Gross:   %5d (fuel %5d bombs %5d ammo %4d) [AUW %5d/%5d/%5d]" % (b.gross, b.fuelmass, b.bay.cap, b.gunammo, b.all_up_wt(90.0), b.all_up_wt(99.0), b.all_up_wt(108.0))
     print "Drag:    %5d (wings %4d fuse %4d engines %4d turrets %4d; ld %4.1f)" % (b.drag, b.wing_drag, b.fuse_drag, b.engines.drag, b.gundrag, b.wing.ld)
     print "Speed:   %5.1fmph @ SL; %5.1fmph cruise @ %5dft; %5.1fmph take-off" % (b.speed_at_alt(0), b.cruising_speed, 1000 * b.cruising_alt, b.takeoff_speed)
-    print "Ceiling: %5dft; init climb %4dfpm" % (b.ceiling * 1000, b.climb_at_alt(0))
-    print "Range:   %4dmi (normal); %4dmi (ferry)" % (b.range, b.ferry)
+    print "Ceiling: %5dft; init climb %4dfpm.  Svp %d" % (b.ceiling * 1000, b.climb_at_alt(0), b.serv * 100)
+    print "Range:   %4dmi (normal); %4dmi (ferry).  Fa %d" % (b.range, b.ferry, b.fail  *100)
     print "Defence: %d (ff %d wl %4.1flb/sqft mp %d ar %3.1f ef %d vu %d gs %d fi %d sc %d fk %d)" % (b.defn(), b.fuel_ratio * 100, b.wing_loading, b.manu_penalty * 100, b.wing.ar, b.evade_factor * 100, b.vuln * 100, b.rate_guns(False) * 100, b.fight_factor(), b.fight_factor(True), b.flak_factor)
     print "Cost:    %5d (core %4d fuse %4d wings %4d engines %4d turrets %4d)" % (b.cost, b.core_cost, b.fuse_cost, b.wing_cost, b.engines.cost, b.guncost)
 

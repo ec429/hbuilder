@@ -1,3 +1,5 @@
+many of these also incur cost increases
+
 General Arrangement
 : Four Engined Bombers
 :: allows engines.number > 3, tare penalty is 90kg
@@ -48,7 +50,7 @@ Wings
 : Wing Stressing Calcs (Improved Wing Structures)
 :: tare 1.4;1.1;0.9
 : Refined Aerofoils
-:: ld + 5%
+:: ld +5%
 
 Fuel Systems
 : Fuel Tanks [legacy fleet]
@@ -67,6 +69,7 @@ Engines
 : Pre-War Engines [legacy fleet]
 :: Mercury XV
 :: Merlin IV
+:: Tiger VIII
 :: tare factor 1.4
 : 1939 Engines [late legacy fleet]
 :: Pegasus XVIII
@@ -80,7 +83,13 @@ Engines
 : Two-Stage Supercharging (V-12 Development)
 :: Merlin 60
 : Sleeve Valve
+:: Hercules III
+: Reliable Sleeve Valve (Sleeve Valve)
 :: Hercules XI
+: Sleeve Valve Growth (Reliable Sleeve Valve)
+:: Hercules XVIII
+: Triple-Row Radials
+:: Deerhound II
 : Clean Entry
 :: engines.drag - 10%
 : Power Egg
