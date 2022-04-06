@@ -264,7 +264,7 @@ class Engines(object):
         return 1.0 - math.pow(1.0 - self.typ.serv, self.number)
     @property
     def cost(self):
-        return self.number * self.typ.cost
+        return self.number * self.typ.cost * 1.5
     @property
     def sc(self):
         return self.typ.sc
@@ -308,7 +308,7 @@ class Wing(object):
     def ld(self):
         mf = 1.05 if self.manu == Manu.SUPERMARINE else 1.0
         return math.pi * math.sqrt(self.ar) * mf
-    def lift(self, v): # maximum lift attainable at given speed (method is unused)
+    def lift(self, v):
         # L = ½Cl rho v^2 S
         # rho is about 1.2kg/cu m = 0.075lbm/cu ft ~= 0.0075lbf/cu ft (take g ~= 10)
         # with v in mph
@@ -503,9 +503,36 @@ class Bomber(object):
     def drag(self):
         return self.wing_drag + self.fuse_drag + self.engines.drag + self.gundrag
     @property
+    def guncost(self):
+        return sum(3 * turret.tare + 10 * turret.guns for turret in self.turrets)
+    @property
+    def core_cost(self):
+        mf = {Manu.SHORTS: 0.8, Manu.AVRO: 1.05}.get(self.manu, 1.0)
+        tf = {FuseType.SLENDER: 1.6,
+              FuseType.SLABBY: 0.9}.get(self.ftype, 1.0)
+        return self.core_tare * mf * tf
+    @property
+    def fuse_cost(self):
+        mf = {Manu.SHORTS: 0.8, Manu.AVRO: 1.05}.get(self.manu, 1.0)
+        tf = {FuseType.NORMAL: 1.0,
+              FuseType.SLENDER: 1.6,
+              FuseType.SLABBY: 0.7,
+              FuseType.GEODETIC: 1.1}[self.ftype]
+        return self.fuse_tare * 1.2 * mf * tf
+    @property
+    def wing_cost(self):
+        if self.manu == Manu.SHORTS:
+            return math.pow(self.wing.tare, 1.1) / 5.0
+        mf = {Manu.AVRO: 1.05}.get(self.manu, 1.0)
+        return math.pow(self.wing.tare, 1.2) * mf / 12.0
+    @property
     def cost(self):
-        #total = self.
-        pass
+        total = self.engines.cost
+        total += self.guncost
+        total += self.core_cost
+        total += self.fuse_cost
+        total += self.wing_cost
+        return total
     def climb_at_alt(self, alt):
         # step 1: calculate power for level flight
         v = self.wing.minv(self.gross, alt)
@@ -521,6 +548,8 @@ class Bomber(object):
     @property
     def takeoff_speed(self):
         return self.wing.minv(self.gross, 0.0) * 1.6 # a certain safety margin is needed
+    def all_up_wt(self, v):
+        return self.wing.lift(v / 1.6)
     @property
     def range(self):
         return (self.fuel * 0.6 * self.cruising_speed) - 150
@@ -591,17 +620,18 @@ class Bomber(object):
 
 def statblock(b):
     print "Tare:    %5d (wings %5d engines %4d turrets %3d bay %4d fuse %4d tanks %4d)" % (b.tare, b.wing.tare, b.engines.tare, b.guntare, b.bay.tare, b.fuse_tare, b.fuel_tare)
-    print "Gross:   %5d (fuel %5d bombs %5d ammo %4d)" % (b.gross, b.fuelmass, b.bay.cap, b.gunammo)
+    print "Gross:   %5d (fuel %5d bombs %5d ammo %4d) [AUW %5d/%5d/%5d]" % (b.gross, b.fuelmass, b.bay.cap, b.gunammo, b.all_up_wt(90.0), b.all_up_wt(99.0), b.all_up_wt(108.0))
     print "Drag:    %5d (wings %4d fuse %4d engines %4d turrets %4d; ld %4.1f)" % (b.drag, b.wing_drag, b.fuse_drag, b.engines.drag, b.gundrag, b.wing.ld)
     print "Speed:   %5.1fmph @ SL; %5.1fmph cruise @ %5dft; %5.1fmph take-off" % (b.speed_at_alt(0), b.cruising_speed, 1000 * b.cruising_alt, b.takeoff_speed)
     print "Ceiling: %5dft; init climb %4dfpm" % (b.ceiling * 1000, b.climb_at_alt(0))
     print "Range:   %4dmi (normal); %4dmi (ferry)" % (b.range, b.ferry)
     print "Defence: %d (ff %d wl %4.1flb/sqft mp %d ar %3.1f ef %d vu %d gs %d fi %d sc %d fk %d)" % (b.defn(), b.fuel_ratio * 100, b.wing_loading, b.manu_penalty * 100, b.wing.ar, b.evade_factor * 100, b.vuln * 100, b.rate_guns(False) * 100, b.fight_factor(), b.fight_factor(True), b.flak_factor)
+    print "Cost:    %5d (core %4d fuse %4d wings %4d engines %4d turrets %4d)" % (b.cost, b.core_cost, b.fuse_cost, b.wing_cost, b.engines.cost, b.guncost)
 
 mediums = True
 whitleys = False
 wellies = False
-heavies = False
+heavies = True
 mossies = False
 lancs = False
 supers = False
