@@ -521,10 +521,11 @@ class Bomber(object):
         return self.fuse_tare * 1.2 * mf * tf
     @property
     def wing_cost(self):
+        arpen = max(self.wing.ar, 6.0) / 6.0
         if self.manu == Manu.SHORTS:
-            return math.pow(self.wing.tare, 1.1) / 5.0
+            return math.pow(self.wing.tare, 1.1) * arpen / 5.0
         mf = {Manu.AVRO: 1.05}.get(self.manu, 1.0)
-        return math.pow(self.wing.tare, 1.2) * mf / 12.0
+        return math.pow(self.wing.tare, 1.2) * mf * arpen / 12.0
     @property
     def cost(self):
         total = self.engines.cost
