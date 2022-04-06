@@ -378,8 +378,13 @@ class FuseType(enum.Enum):
     SLABBY = 2
     GEODETIC = 3
 
+class Electrics(enum.Enum):
+    LOW = 0 # minor utilities only
+    HIGH = 1 # can drive GEE
+    STABLE = 2 # OBOE, H2S, GH
+
 class Bomber(object):
-    def __init__(self, engines, turrets, wing, crew, bay, fuel, manu, ftype=FuseType.NORMAL, haddock=False, sst=True):
+    def __init__(self, engines, turrets, wing, crew, bay, fuel, manu, ftype=FuseType.NORMAL, elec=Electrics.HIGH, haddock=False, sst=True):
         self.engines = engines
         self.engines.manu = manu
         self.turrets = turrets
@@ -391,6 +396,7 @@ class Bomber(object):
         self.manu = manu
         self.wing.manu = manu
         self.ftype = ftype
+        self.elec = elec
         self.haddock = haddock # high altitude doctrine
         self.sst = sst
         e, w = self.validate()
@@ -533,7 +539,7 @@ class Bomber(object):
     def core_cost(self):
         mf = {Manu.SHORTS: 0.8, Manu.AVRO: 1.05}.get(self.manu, 1.0)
         tf = {FuseType.SLENDER: 1.6,
-              FuseType.SLABBY: 0.9}.get(self.ftype, 1.0)
+              FuseType.SLABBY: 0.8}.get(self.ftype, 1.0)
         ef = 2.0 if self.engines.number > 2 else 1.0
         return self.core_tare * mf * tf * ef
     @property
@@ -552,6 +558,17 @@ class Bomber(object):
             return math.pow(self.wing.tare, 1.1) * arpen / 5.0
         mf = {Manu.AVRO: 1.05}.get(self.manu, 1.0)
         return math.pow(self.wing.tare, 1.2) * mf * arpen * ef / 12.0
+    @property
+    def elec_cost(self):
+        if self.elec == Electrics.LOW:
+            return 90.0
+        if self.elec == Electrics.HIGH:
+            return 600.0 / self.engines.number
+        assert self.elec == Electrics.STABLE
+        base = 500.0 / self.engines.number
+        if self.ftype == FuseType.SLENDER:
+            return base + 1200.0
+        return base + 900.0
     @property
     def cost(self):
         total = self.engines.cost
@@ -653,7 +670,7 @@ def statblock(b):
     print "Ceiling: %5dft; init climb %4dfpm.  Svp %d" % (b.ceiling * 1000, b.climb_at_alt(0), b.serv * 100)
     print "Range:   %4dmi (normal); %4dmi (ferry).  Fa %d" % (b.range, b.ferry, b.fail  *100)
     print "Defence: %d (ff %d wl %4.1flb/sqft mp %d ar %3.1f ef %d vu %d gs %d fi %d sc %d fk %d)" % (b.defn(), b.fuel_ratio * 100, b.wing_loading, b.manu_penalty * 100, b.wing.ar, b.evade_factor * 100, b.vuln * 100, b.rate_guns(False) * 100, b.fight_factor(), b.fight_factor(True), b.flak_factor)
-    print "Cost:    %5d (core %4d fuse %4d wings %4d engines %4d turrets %4d)" % (b.cost, b.core_cost, b.fuse_cost, b.wing_cost, b.engines.cost, b.guncost)
+    print "Cost:    %5d (core %4d fuse %4d wings %4d engines %4d turrets %4d elec %4d)" % (b.cost, b.core_cost, b.fuse_cost, b.wing_cost, b.engines.cost, b.guncost, b.elec_cost)
 
 mediums = True
 whitleys = False
@@ -665,18 +682,18 @@ supers = False
 
 if mediums:
     print 'BLEN'
-    Blenheim = Bomber(Engines(2, engines[0]), [Chin(), Dorsal()], Wing(469, 56), [Pilot, Nav, Gunner], BombBay(1200, BBGirth.SMALL), 6.4, Manu.BRISTOL)
+    Blenheim = Bomber(Engines(2, engines[0]), [Chin(), Dorsal()], Wing(469, 56), [Pilot, Nav, Gunner], BombBay(1200, BBGirth.SMALL), 6.4, Manu.BRISTOL, elec=Electrics.LOW)
     statblock(Blenheim) # tare should be 9.8
 
 if whitleys:
     print 'WHT3' # Whitley Mk III
-    WhitleyIII = Bomber(Engines(2, engines[11]), [NoseGun(), Ventral(), Tail()], Wing(1137, 84), [Pilot, Nav, Crewman(Crewpos.B, True), Crewman(Crewpos.W, True), Gunner], BombBay(7000, BBGirth.SMALL), 12.0, Manu.ARMSTRONG, ftype=FuseType.SLABBY)
+    WhitleyIII = Bomber(Engines(2, engines[11]), [NoseGun(), Ventral(), Tail()], Wing(1137, 84), [Pilot, Nav, Crewman(Crewpos.B, True), Crewman(Crewpos.W, True), Gunner], BombBay(7000, BBGirth.SMALL), 12.0, Manu.ARMSTRONG, ftype=FuseType.SLABBY, elec=Electrics.LOW)
     statblock(WhitleyIII)
     print 'WHIV' # Whitley Mk IV
-    WhitleyIV = Bomber(Engines(2, engines[1]), [NoseGun(), TailQuad()], Wing(1137, 84), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Gunner], BombBay(7000, BBGirth.SMALL), 12.0, Manu.ARMSTRONG, ftype=FuseType.SLABBY)
+    WhitleyIV = Bomber(Engines(2, engines[1]), [NoseGun(), TailQuad()], Wing(1137, 84), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Gunner], BombBay(7000, BBGirth.SMALL), 12.0, Manu.ARMSTRONG, ftype=FuseType.SLABBY, elec=Electrics.LOW)
     statblock(WhitleyIV)
     print 'WHRT' # short-winged Whitley
-    Whort = Bomber(Engines(2, engines[2]), [NoseGun(), TailQuad()], Wing(1000, 75), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Gunner], BombBay(7000, BBGirth.SMALL), 11.0, Manu.ARMSTRONG, ftype=FuseType.SLABBY)
+    Whort = Bomber(Engines(2, engines[2]), [NoseGun(), TailQuad()], Wing(1000, 75), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Gunner], BombBay(7000, BBGirth.SMALL), 11.0, Manu.ARMSTRONG, ftype=FuseType.SLABBY, elec=Electrics.LOW)
     statblock(Whort)
 if mediums or whitleys:
     print 'WHIT'
@@ -727,11 +744,11 @@ if wellies:
 
 if mossies:
     print 'MOS4'
-    MosquitoIV = Bomber(Engines(2, engines[3]), [], Wing(454, 54), [Pilot, Nav], BombBay(2000, BBGirth.COOKIE), 6.4, Manu.DH)
+    MosquitoIV = Bomber(Engines(2, engines[3]), [], Wing(454, 54), [Pilot, Nav], BombBay(2000, BBGirth.COOKIE), 6.4, Manu.DH, elec=Electrics.STABLE)
     statblock(MosquitoIV)
 if mediums or mossies:
     print 'MOSQ'
-    MosquitoIX = Bomber(Engines(2, engines[4]), [], Wing(454, 54), [Pilot, Nav], BombBay(4000, BBGirth.COOKIE), 6, Manu.DH)
+    MosquitoIX = Bomber(Engines(2, engines[4]), [], Wing(454, 54), [Pilot, Nav], BombBay(4000, BBGirth.COOKIE), 6, Manu.DH, elec=Electrics.STABLE)
     statblock(MosquitoIX) # tare should be 14.3
 
 if heavies:
@@ -740,19 +757,19 @@ if heavies:
     statblock(Manchester) # tare should be 31.2
 
     print 'STIR'
-    Stirling = Bomber(Engines(4, engines[6]), [Nose(), Dorsal(), TailQuad()], Wing(1460, 99), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.SMALL), 8, Manu.SHORTS)
+    Stirling = Bomber(Engines(4, engines[6]), [Nose(), Dorsal(), TailQuad()], Wing(1460, 99), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.SMALL), 8, Manu.SHORTS, ftype=FuseType.SLABBY, elec=Electrics.STABLE)
     statblock(Stirling) # tare should be 49.6
 
 if heavies or lancs:
     print 'LANC'
-    Lancaster = Bomber(Engines(4, engines[3]), [Nose(), Dorsal(), TailQuad()], Wing(1297, 102), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.COOKIE), 9.6, Manu.AVRO, haddock=True)
+    Lancaster = Bomber(Engines(4, engines[3]), [Nose(), Dorsal(), TailQuad()], Wing(1297, 102), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.COOKIE), 9.6, Manu.AVRO, elec=Electrics.STABLE, haddock=True)
     statblock(Lancaster) # tare should be 36.9
 if lancs:
     print 'SHNC' # Short-winged Lancaster
-    Shankaster = Bomber(Engines(4, engines[3]), [Nose(), Dorsal(), TailQuad()], Wing(1297, 88), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.COOKIE), 9.6, Manu.AVRO, haddock=True)
+    Shankaster = Bomber(Engines(4, engines[3]), [Nose(), Dorsal(), TailQuad()], Wing(1297, 88), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.COOKIE), 9.6, Manu.AVRO, elec=Electrics.STABLE, haddock=True)
     statblock(Shankaster)
     print 'LONC' # Long-winged Lancaster
-    Longcaster = Bomber(Engines(4, engines[3]), [Nose(), Dorsal(), TailQuad()], Wing(1297, 118), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.COOKIE), 9.6, Manu.AVRO, haddock=True)
+    Longcaster = Bomber(Engines(4, engines[3]), [Nose(), Dorsal(), TailQuad()], Wing(1297, 118), [Pilot, Nav, Crewman(Crewpos.B, True), WirelessOp, Engineer, Gunner, Gunner], BombBay(14000, BBGirth.COOKIE), 9.6, Manu.AVRO, elec=Electrics.STABLE, haddock=True)
     statblock(Longcaster)
 
 if supers:
