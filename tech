@@ -1,0 +1,55 @@
+MB:G4T=0:G4C=0:n=Medium Bombers:y=0
+CA:CMI=75:CCC=100:n=Crew Accommodation:y=0
+PD:CLT=21:n=Pre-War Doctrine:y=0
+BF:FTN=15:FTT=10:FTS=9:FTG=17:FDN=50:FDT=30:FDS=72:FDG=54:FWT=135:n=Basic Fuselages:y=0
+BM:CCN=10:CCT=16:CCS=8:CCG=10:FCN=10:FCT=16:FCS=7:FCG=11:n=Basic Manufacturing:y=0
+CW:WTS=150:WTC=120:WTF=55:WLD=100:WCF=100:n=Cantilever Wings:y=0
+FT:FUT=12:FUV=10:SFT=0:SFV=0:SFC=0:FUC=100:n=Fuel Tanks:y=0
+PE:e=Merc:e=Mer4:e=Tigr:ETF=14:EES=0:EET=0:EEC=0:EMC=100:n=Pre-War Engines:y=0
+BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Beam:t=Tail:GTF=175:GDF=24:GCF=100:GAC=100:GAM=100:n=Basic Turrets:y=0
+IB:BTS=70:BTM=100:BTC=0:BMC=0:BBB=8:BBF=2:n=Internal Bay:y=0
+ED:ESL=0:n=Engine Dynamo:y=0
+FEB:G4T=90:G4C=100:n=Four Engined Bombers:y=1940
+MFE:G4T=40:G4C=95:r=FEB:n=Mature Four-Engine Layout:y=1942
+CRS:CMI=80:CES=110:CCC=105:n=Crew Stations:y=1940
+ICS:CMI=60:CCC=108:r=CRS:n=Improved Crew Stations:y=1943
+DHA:CLT=45:n=High Altitude Doctrine:y=1941
+IGF:FTG=14:FCG=12:n=Improved Geodetics:y=1940
+RFF:FTN=11:FTT=8:FDN=45:FDT=27:FCN=15:FCT=22:FDS=68:n=Refined Fuselages:y=1941
+GSF:FDG=48:FCG=13:r=IGF:n=Geodetic Streamlining:y=1941
+SCF:FTN=8:FTT=6:FTS=5:FCN=22:FCT=30:FCS=14:FWT=125:r=RFF:n=Fuselage Stressing Calcs:y=1943
+LWW:WTF=50:WCF=120:n=Lightweight Wings:y=1941
+ISW:WTS=145:WTC=120:WTF=60:WCF=118:r=LWW:n=Improved Wing Structures:y=1942
+SCW:WTS=140:WTC=110:WTF=90:WCF=140:r=ISW:n=Wing Stressing Calcs:y=1943
+RFA:WLD=105:n=Refined Aerofoils:y=1943
+SST:SFT=110:SFV=50:SFC=125:n=Self-Sealing Tanks:y=1939
+LFT:FUT=10:FUC=135:n=Lightweight Fuel Tanks:y=1941
+IFT:FUT=9:FUV=9:FUC=160:r=LFT:n=Improved Fuel Tanks:y=1942
+HPE:ESL=1:n=High Power Electrics:y=1941
+SVS:ESL=2:r=HPE:n=Stable Voltage Supply:y=1942
+LPE:e=Pega:e=MerX:i=1:n=1939 Engines:y=0
+X24:e=Vult:n=X-24 Engines:y=1940
+VUR:e=Vul5:r=X24:n=Vulture Reliability:y=1942
+V12:e=MeXX:n=V-12 Development:y=1941
+TSS:e=Mer6:r=V12:n=Two-Stage Supercharging:y=1942
+SLV:e=Her3:n=Sleeve Valve:y=1941
+RSV:e=HeXI:r=SLV:n=Reliable Sleeve Valve:y=1942
+SVG:e=He18:r=RSV:n=Sleeve Valve Growth:y=1943
+TRR:e=Deer:n=Triple-Row Radials:y=1941
+CLE:EDF=90:EMC=110:n=Clean Entry:y=1942
+EGG:EES=90:EET=105:EEC=95:n=Power Egg:y=1941
+IEM:ETF=12:EMC=120:r=CLE:n=Improved Engine Mountings:y=1943
+DUT:t=Vent:i=1:n=Dustbin Turret:y=0
+ARM:t=Dors:t=Daft:t=Vaft:t=Wast:n=Armament Improvements:y=1939
+QUT:t=Dor4:t=Tai4:r=ARM:n=Quad Turrets:y=1941
+IVT:t=Ven2:r=DUT:n=Improved Ventral Turrets:y=1942
+BAT:t=Ball:t=Bal4:r=IVT:n=Ball Turret:y=1943
+FCT:t=Dor5:t=Tai5:r=QUT:n=.50 Caliber Turret:y=1943
+GLT:t=Aglt:r=QUT:r=SVS:n=Gun-Laying Radar:y=1944
+IHY:GTF=160:GCF=105:n=Improved Hydraulics:y=1941
+TUF:GDF=18:n=Turret Fairings:y=1942
+LAT:GAM=90:GAC=120:n=Lightweight Ammo Tracks:y=1941
+HCB:BTM=90:BMC=1:n=High Capacity Bombs:y=1940
+BCE:BTS=55:n=Bomb Cells:y=1940
+LBB:BTC=110:BBF=3:r=HCB:n=Large Bomb Bay:y=1941
+BBS:BTM=80:BTC=100:BBB=10:r=LBB:n=Bomb Bay Structures:y=1942
