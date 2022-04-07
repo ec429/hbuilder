@@ -2,15 +2,42 @@
 #include <string.h>
 
 #include "data.h"
+#include "calc.h"
 
 void error(const char *msg, int rc)
 {
 	fprintf(stderr, "%s: %s\n", msg, strerror(-rc));
 }
 
+void empty_guns(struct list_head *guns)
+{
+	struct turret *gun;
+
+	list_for_each_entry(gun, guns)
+		gun->unlocked = false;
+}
+
+void empty_engines(struct list_head *engines)
+{
+	struct engine *eng;
+
+	list_for_each_entry(eng, engines)
+		eng->unlocked = false;
+}
+
+void empty_techs(struct list_head *techs)
+{
+	struct tech *tech;
+
+	list_for_each_entry(tech, techs)
+		tech->unlocked = !tech->year && !tech->inter;
+}
+
 int main(void)
 {
 	struct list_head guns, engines, manfs, techs;
+	struct tech_numbers tn;
+	struct bomber b;
 	int rc;
 
 	INIT_LIST_HEAD(&guns);
@@ -45,6 +72,28 @@ int main(void)
 		return 1;
 	}
 	fprintf(stderr, "Loaded %d techs\n", rc);
+
+	empty_guns(&guns);
+	empty_engines(&engines);
+	empty_techs(&techs);
+	rc = apply_techs(&techs, &tn);
+	if (rc < 0) {
+		error("Failed to init techs", rc);
+		return 1;
+	}
+	fprintf(stderr, "Initialised tech numbers\n");
+
+	init_bomber(&b, list_first_entry(&manfs, struct manf),
+		    list_first_entry(&engines, struct engine));
+	rc = calc_bomber(&b, &tn);
+	if (rc < 0) {
+		error("Failed to update calcs", rc);
+		return 1;
+	}
+	fprintf(stderr, "Prepared blank bomber\n");
+
+	dump_bomber_info(&b);
+	dump_bomber_calcs(&b);
 
 	fprintf(stderr, "Cleaning up...\n");
 	free_techs(&techs);

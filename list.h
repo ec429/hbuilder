@@ -3,6 +3,9 @@
 /* list.h lovingly copied from Linux kernel. */
 #include <stddef.h>
 
+#ifndef _LIST_H
+#define _LIST_H
+
 #define LIST_POISON1	(void *)0x100
 #define LIST_POISON2	(void *)0x122
 
@@ -62,3 +65,5 @@ static inline int list_empty(const struct list_head *head)
 	for (pos = list_first_entry(head, typeof(*pos));		\
 	     !list_entry_is_head(pos, head);				\
 	     pos = list_next_entry(pos))
+
+#endif // _LIST_H

@@ -1,4 +1,8 @@
+#include <stdbool.h>
 #include "list.h"
+
+#ifndef _DATA_H
+#define _DATA_H
 
 enum turret_location {
 	LXN_UNSPEC,
@@ -34,6 +38,7 @@ struct turret {
 	unsigned int gc[GC_COUNT];
 	unsigned int esl;
 	char *name;
+	bool unlocked;
 };
 
 int load_guns(struct list_head *head);
@@ -52,22 +57,19 @@ struct engine {
 	unsigned int drg;
 	char *manu;
 	char *name;
+	bool unlocked;
 };
 
 int load_engines(struct list_head *head);
 int free_engines(struct list_head *head);
 
-struct manf {
-	struct list_head list;
-	char ident[3];
-	unsigned int wap, wld, btc, bbb, wcf, wcp, acf, act, geo;
-	unsigned int tpl, fdn, ftn, fts, svp, fdf, bof;
-	char *eman; // engine manufacturer
-	char *name;
-};
+enum bb_girth {
+	BB_SMALL,
+	BB_MEDIUM,
+	BB_COOKIE,
 
-int load_manfs(struct list_head *head);
-int free_manfs(struct list_head *head);
+	BB_COUNT
+};
 
 enum fuse_type {
 	FT_NORMAL,
@@ -78,39 +80,55 @@ enum fuse_type {
 	FT_COUNT
 };
 
-enum bb_girth {
-	BB_SMALL,
-	BB_MEDIUM,
-	BB_COOKIE,
+struct manf {
+	struct list_head list;
+	char ident[3];
+	unsigned int wap, wld, bt[BB_COUNT], bbb, wcf, wcp, wc4, acc, act, geo;
+	unsigned int tpl, fd[FT_COUNT], ft[FT_COUNT], svp, bof;
+	char *eman; // engine manufacturer
+	char *name;
+};
 
-	BB_COUNT
+int load_manfs(struct list_head *head);
+int free_manfs(struct list_head *head);
+
+struct tech_numbers {
+	/* These MUST all be `unsigned int`!  Copying code assumes this. */
+	unsigned int g4t, g4c; // General Arrangement
+	unsigned int cmi, ces, ccc; // Crew Stations
+	unsigned int clt; // CLimb Time
+	unsigned int ft[FT_COUNT]; // Fuse Tare * 100
+	unsigned int fd[FT_COUNT]; // Fuse Drag * 10
+	unsigned int fs[FT_COUNT]; // Fuse Serv * 10
+	unsigned int ff[FT_COUNT]; // Fuse Fail * 10
+	unsigned int fv[FT_COUNT]; // Fuse Vuln * 100
+	unsigned int fwt; // Fuse Wing Tare * 100
+	unsigned int cc[FT_COUNT]; // Core Cost * 100
+	unsigned int fc[FT_COUNT]; // Fuse Cost * 100
+	unsigned int wts, wtc, wtf, wld, wcf; // Wings
+	unsigned int fut, fuv, fgv, sft, sfv, sfc, fuc; // Fuel Tanks
+	unsigned int etf, edf, ees, eet, eec, emc; // Engine Mounts
+	unsigned int gtf, gdf, gcf, gac, gam; // Gun Turrets
+	unsigned int bt[BB_COUNT], bmc, bbb, bbf;
+	unsigned int esl;
 };
 
 struct tech {
 	struct list_head list;
 	char ident[4];
 	unsigned int year, inter;
-	unsigned int g4t, g4c; // General Arrangement
-	unsigned int cmi, ces, ccc; // Crew Stations
-	unsigned int clt; // CLimb Time
-	unsigned int ft[FT_COUNT]; // Fuse Tare * 10
-	unsigned int fd[FT_COUNT]; // Fuse Drag * 10
-	unsigned int fwt; // Fuse Wing Tare * 100
-	unsigned int cc[FT_COUNT]; // Core Cost * 10
-	unsigned int fc[FT_COUNT]; // Fuse Cost * 10
-	unsigned int wts, wtc, wtf, wld, wcf; // Wings
-	unsigned int fut, fuv, sft, sfv, sfc, fuc; // Fuel Tanks
-	unsigned int etf, edf, ees, eet, eec, emc; // Engine Mounts
-	unsigned int gtf, gdf, gcf, gac, gam; // Gun Turrets
-	unsigned int bt[BB_COUNT], bmc, bbb, bbf;
-	unsigned int esl;
-	/* TODO numbers */
+	struct tech_numbers num;
 	struct tech *req[8];
 	struct engine *eng[16];
 	struct turret *gun[16];
 	char *name;
+	bool unlocked;
 };
 
 int load_techs(struct list_head *head, struct list_head *engines,
 	       struct list_head *guns);
 int free_techs(struct list_head *head);
+
+int apply_techs(struct list_head *techs, struct tech_numbers *tn);
+
+#endif // _DATA_H

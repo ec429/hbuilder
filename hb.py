@@ -108,7 +108,7 @@ class Guns(object):
     @property
     def ammomass(self):
         # I think a .303 bullet + cartridge is about 0.09lb
-        # and we'll assume 2000rpg
+        # and we'll assume 2000rpg (actually this includes racks/tracks)
         return self.guns * 180
     def coverage(self, direction):
         # Return firepower in .303s equivalent
@@ -576,6 +576,7 @@ class Bomber(object):
         total += self.core_cost
         total += self.fuse_cost
         total += self.wing_cost
+        total += self.elec_cost
         return total
     def climb_at_alt(self, alt):
         # step 1: calculate power for level flight

@@ -252,19 +252,26 @@ static int load_manf_word(const char *key, const char *value, void *data)
 
 	INT_KEY(man, "WAP", wap);
 	INT_KEY(man, "WLD", wld);
-	INT_KEY(man, "BTC", btc);
+	INT_KEY(man, "BTS", bt[BB_SMALL]);
+	INT_KEY(man, "BTM", bt[BB_MEDIUM]);
+	INT_KEY(man, "BTC", bt[BB_COOKIE]);
 	INT_KEY(man, "BBB", bbb);
 	INT_KEY(man, "WCF", wcf);
 	INT_KEY(man, "WCP", wcp);
-	INT_KEY(man, "ACF", acf);
+	INT_KEY(man, "WC4", wc4);
+	INT_KEY(man, "ACC", acc);
 	INT_KEY(man, "ACT", act);
 	INT_KEY(man, "GEO", geo);
 	INT_KEY(man, "TPL", tpl);
-	INT_KEY(man, "FDN", fdn);
-	INT_KEY(man, "FTN", ftn);
-	INT_KEY(man, "FTS", fts);
+	INT_KEY(man, "FDN", fd[FT_NORMAL]);
+	INT_KEY(man, "FDT", fd[FT_SLENDER]);
+	INT_KEY(man, "FDS", fd[FT_SLABBY]);
+	INT_KEY(man, "FDG", fd[FT_GEODETIC]);
+	INT_KEY(man, "FTN", ft[FT_NORMAL]);
+	INT_KEY(man, "FTT", ft[FT_SLENDER]);
+	INT_KEY(man, "FTS", ft[FT_SLABBY]);
+	INT_KEY(man, "FTG", ft[FT_GEODETIC]);
 	INT_KEY(man, "SVP", svp);
-	INT_KEY(man, "FDF", fdf);
 	INT_KEY(man, "BOF", bof);
 	if (!strcmp(key, "e")) {
 		man->eman = strdup(value);
@@ -379,58 +386,71 @@ static int load_tech_word(const char *key, const char *value, void *data)
 
 	INT_KEY(loader->tech, "y", year);
 	INT_KEY(loader->tech, "i", inter);
-	INT_KEY(loader->tech, "G4T", g4t);
-	INT_KEY(loader->tech, "G4C", g4c);
-	INT_KEY(loader->tech, "CMI", cmi);
-	INT_KEY(loader->tech, "CES", ces);
-	INT_KEY(loader->tech, "CCC", ccc);
-	INT_KEY(loader->tech, "CLT", clt);
-	INT_KEY(loader->tech, "FTN", ft[FT_NORMAL]);
-	INT_KEY(loader->tech, "FTT", ft[FT_SLENDER]);
-	INT_KEY(loader->tech, "FTS", ft[FT_SLABBY]);
-	INT_KEY(loader->tech, "FTG", ft[FT_GEODETIC]);
-	INT_KEY(loader->tech, "FDN", fd[FT_NORMAL]);
-	INT_KEY(loader->tech, "FDT", fd[FT_SLENDER]);
-	INT_KEY(loader->tech, "FDS", fd[FT_SLABBY]);
-	INT_KEY(loader->tech, "FDG", fd[FT_GEODETIC]);
-	INT_KEY(loader->tech, "FWT", fwt);
-	INT_KEY(loader->tech, "CCN", cc[FT_NORMAL]);
-	INT_KEY(loader->tech, "CCT", cc[FT_SLENDER]);
-	INT_KEY(loader->tech, "CCS", cc[FT_SLABBY]);
-	INT_KEY(loader->tech, "CCG", cc[FT_GEODETIC]);
-	INT_KEY(loader->tech, "FCN", fc[FT_NORMAL]);
-	INT_KEY(loader->tech, "FCT", fc[FT_SLENDER]);
-	INT_KEY(loader->tech, "FCS", fc[FT_SLABBY]);
-	INT_KEY(loader->tech, "FCG", fc[FT_GEODETIC]);
-	INT_KEY(loader->tech, "WTS", wts);
-	INT_KEY(loader->tech, "WTC", wtc);
-	INT_KEY(loader->tech, "WTF", wtf);
-	INT_KEY(loader->tech, "WLD", wld);
-	INT_KEY(loader->tech, "WCF", wcf);
-	INT_KEY(loader->tech, "FUT", fut);
-	INT_KEY(loader->tech, "FUV", fuv);
-	INT_KEY(loader->tech, "SFT", sft);
-	INT_KEY(loader->tech, "SFV", sfv);
-	INT_KEY(loader->tech, "SFC", sfc);
-	INT_KEY(loader->tech, "FUC", fuc);
-	INT_KEY(loader->tech, "ETF", etf);
-	INT_KEY(loader->tech, "EDF", edf);
-	INT_KEY(loader->tech, "EES", ees);
-	INT_KEY(loader->tech, "EET", eet);
-	INT_KEY(loader->tech, "EEC", eec);
-	INT_KEY(loader->tech, "EMC", emc);
-	INT_KEY(loader->tech, "GTF", gtf);
-	INT_KEY(loader->tech, "GDF", gdf);
-	INT_KEY(loader->tech, "GCF", gcf);
-	INT_KEY(loader->tech, "GAC", gac);
-	INT_KEY(loader->tech, "GAM", gam);
-	INT_KEY(loader->tech, "BTS", bt[BB_SMALL]);
-	INT_KEY(loader->tech, "BTM", bt[BB_MEDIUM]);
-	INT_KEY(loader->tech, "BTC", bt[BB_COOKIE]);
-	INT_KEY(loader->tech, "BMC", bmc);
-	INT_KEY(loader->tech, "BBB", bbb);
-	INT_KEY(loader->tech, "BBF", bbf);
-	INT_KEY(loader->tech, "ESL", esl);
+	INT_KEY(loader->tech, "G4T", num.g4t);
+	INT_KEY(loader->tech, "G4C", num.g4c);
+	INT_KEY(loader->tech, "CMI", num.cmi);
+	INT_KEY(loader->tech, "CES", num.ces);
+	INT_KEY(loader->tech, "CCC", num.ccc);
+	INT_KEY(loader->tech, "CLT", num.clt);
+	INT_KEY(loader->tech, "FTN", num.ft[FT_NORMAL]);
+	INT_KEY(loader->tech, "FTT", num.ft[FT_SLENDER]);
+	INT_KEY(loader->tech, "FTS", num.ft[FT_SLABBY]);
+	INT_KEY(loader->tech, "FTG", num.ft[FT_GEODETIC]);
+	INT_KEY(loader->tech, "FDN", num.fd[FT_NORMAL]);
+	INT_KEY(loader->tech, "FDT", num.fd[FT_SLENDER]);
+	INT_KEY(loader->tech, "FDS", num.fd[FT_SLABBY]);
+	INT_KEY(loader->tech, "FDG", num.fd[FT_GEODETIC]);
+	INT_KEY(loader->tech, "FSN", num.fs[FT_NORMAL]);
+	INT_KEY(loader->tech, "FST", num.fs[FT_SLENDER]);
+	INT_KEY(loader->tech, "FSS", num.fs[FT_SLABBY]);
+	INT_KEY(loader->tech, "FSG", num.fs[FT_GEODETIC]);
+	INT_KEY(loader->tech, "FFN", num.ff[FT_NORMAL]);
+	INT_KEY(loader->tech, "FFT", num.ff[FT_SLENDER]);
+	INT_KEY(loader->tech, "FFS", num.ff[FT_SLABBY]);
+	INT_KEY(loader->tech, "FFG", num.ff[FT_GEODETIC]);
+	INT_KEY(loader->tech, "FVN", num.fv[FT_NORMAL]);
+	INT_KEY(loader->tech, "FVT", num.fv[FT_SLENDER]);
+	INT_KEY(loader->tech, "FVS", num.fv[FT_SLABBY]);
+	INT_KEY(loader->tech, "FVG", num.fv[FT_GEODETIC]);
+	INT_KEY(loader->tech, "FWT", num.fwt);
+	INT_KEY(loader->tech, "CCN", num.cc[FT_NORMAL]);
+	INT_KEY(loader->tech, "CCT", num.cc[FT_SLENDER]);
+	INT_KEY(loader->tech, "CCS", num.cc[FT_SLABBY]);
+	INT_KEY(loader->tech, "CCG", num.cc[FT_GEODETIC]);
+	INT_KEY(loader->tech, "FCN", num.fc[FT_NORMAL]);
+	INT_KEY(loader->tech, "FCT", num.fc[FT_SLENDER]);
+	INT_KEY(loader->tech, "FCS", num.fc[FT_SLABBY]);
+	INT_KEY(loader->tech, "FCG", num.fc[FT_GEODETIC]);
+	INT_KEY(loader->tech, "WTS", num.wts);
+	INT_KEY(loader->tech, "WTC", num.wtc);
+	INT_KEY(loader->tech, "WTF", num.wtf);
+	INT_KEY(loader->tech, "WLD", num.wld);
+	INT_KEY(loader->tech, "WCF", num.wcf);
+	INT_KEY(loader->tech, "FUT", num.fut);
+	INT_KEY(loader->tech, "FUV", num.fuv);
+	INT_KEY(loader->tech, "FGV", num.fgv);
+	INT_KEY(loader->tech, "SFT", num.sft);
+	INT_KEY(loader->tech, "SFV", num.sfv);
+	INT_KEY(loader->tech, "SFC", num.sfc);
+	INT_KEY(loader->tech, "FUC", num.fuc);
+	INT_KEY(loader->tech, "ETF", num.etf);
+	INT_KEY(loader->tech, "EDF", num.edf);
+	INT_KEY(loader->tech, "EES", num.ees);
+	INT_KEY(loader->tech, "EET", num.eet);
+	INT_KEY(loader->tech, "EEC", num.eec);
+	INT_KEY(loader->tech, "EMC", num.emc);
+	INT_KEY(loader->tech, "GTF", num.gtf);
+	INT_KEY(loader->tech, "GDF", num.gdf);
+	INT_KEY(loader->tech, "GCF", num.gcf);
+	INT_KEY(loader->tech, "GAC", num.gac);
+	INT_KEY(loader->tech, "GAM", num.gam);
+	INT_KEY(loader->tech, "BTS", num.bt[BB_SMALL]);
+	INT_KEY(loader->tech, "BTM", num.bt[BB_MEDIUM]);
+	INT_KEY(loader->tech, "BTC", num.bt[BB_COOKIE]);
+	INT_KEY(loader->tech, "BMC", num.bmc);
+	INT_KEY(loader->tech, "BBB", num.bbb);
+	INT_KEY(loader->tech, "BBF", num.bbf);
+	INT_KEY(loader->tech, "ESL", num.esl);
 	if (!strcmp(key, "e")) {
 		struct engine *eng;
 		unsigned int i;
@@ -500,7 +520,6 @@ static int load_tech(const char *line, void *data)
 {
 	struct tech *tech = calloc(1, sizeof(*tech));
 	struct tech_loader *loader = data;
-	bool star;
 	int rc;
 
 	if (strcspn(line, ":") != 3) {
@@ -549,6 +568,31 @@ int free_techs(struct list_head *head)
 		free(tech->name);
 		list_del(&tech->list);
 		free(tech);
+	}
+	return 0;
+}
+
+int apply_techs(struct list_head *techs, struct tech_numbers *tn)
+{
+	struct tech *tech;
+
+	memset(tn, 0, sizeof(*tn));
+	list_for_each_entry(tech, techs) {
+		unsigned int *p, *q, i;
+
+		if (!tech->unlocked)
+			continue;
+		p = (unsigned int *)&tech->num;
+		q = (unsigned int *)tn;
+		for (i = 0; i * sizeof(*p) < sizeof(*tn); i++)
+			if (p[i])
+				q[i] = p[i];
+		for (i = 0; i < ARRAY_SIZE(tech->eng); i++)
+			if (tech->eng[i])
+				tech->eng[i]->unlocked = true;
+		for (i = 0; i < ARRAY_SIZE(tech->gun); i++)
+			if (tech->gun[i])
+				tech->gun[i]->unlocked = true;
 	}
 	return 0;
 }

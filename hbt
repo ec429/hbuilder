@@ -44,13 +44,20 @@ Fuselage
 
 Wings
 : Cantilever Wings [legacy fleet]
-:: tare 1.5;1.2;0.55
+:: tare 1.5;1.2;1.0
+:: cost 1.0
 : Lightweight Wings
-:: tare 1.5;1.2;0.5
+:: tare 1.5;1.2;0.9
+:: cost 1.2
 : Improved Wing Structures (Lightweight Wings)
-:: tare 1.45;1.2;0.6
+# small wings may get slightly heavier, but at least cost drops
+:: tare 1.45;1.2;1.1
+:: cost 1.15
 : Wing Stressing Calcs (Improved Wing Structures)
-:: tare 1.4;1.1;0.9
+# small wings get negligible benefit here and cost goes up
+# (do we need an option to use older TL?)
+:: tare 1.4;1.1;1.65
+:: cost 1.35
 : Refined Aerofoils
 :: ld +5%
 
