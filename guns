@@ -1,7 +1,7 @@
 Ngun:SRV=2:TWT=25:DRG=4:LXN=1:GUN=1:GCF=10:n=Nose gun (single)
 Nose:SRV=5:TWT=100:DRG=6:LXN=1:GUN=2:GCF=20:GCD=20:n=Nose turret (twin)
 Chin:SRV=7:TWT=50:DRG=5:LXN=6:GUN=2:GCL=15:n=Rearward chin mount
-Daf1:SRV=5:TWT=20:DRG=5:LXN=2:GUN=1:GCH=10:Dorsal after (single)
+Daf1:SRV=5:TWT=20:DRG=5:LXN=2:GUN=1:GCH=10:n=Dorsal after (single)
 Dor1:SRV=6:TWT=70:DRG=8:LXN=2:GUN=1:GCD=10:GCH=10:n=Dorsal turret (single)
 Dors:SRV=5:TWT=100:DRG=10:LXN=2:GUN=2:GCD=20:GCH=20:n=Dorsal turret (twin)
 Dor4:SRV=5:TWT=170:DRG=12:LXN=2:GUN=4:GCF=20:GCD=40:GCH=40:n=Dorsal turret (quad)
