@@ -1,0 +1,17 @@
+hbuilder - Harris aircraft designer
+
+"It's like SpringStyle, but for bombers."
+
+This is a speculative/long-term project to add the ability for players in
+ Harris to design their own aircraft, according to the technologies that
+ have been researched by the 'boffins'.
+
+Most of the relevant gameplay rules haven't been nailed down yet; currently
+ we're just experimenting with the design calculations.
+
+hb.py implements an early prototype of the calculator, without tech levels.
+hbuilder (the C program) will implement the full calculator, and an
+ interactive frontend to drive it.  This will doubtless uncover some
+ infelicities in the existing design calculations...
+
+hbuilder is licensed under the GNU GPL version 2.
