@@ -30,7 +30,7 @@ static int calc_engines(struct bomber *b, struct tech_numbers *tn)
 	float mounts = 0;
 
 	e->odd = e->number & 1;
-	e->manumatch = !strcmp(e->typ->manu, b->manf->eman);
+	e->manumatch = b->manf->eman && !strcmp(e->typ->manu, b->manf->eman);
 	if (e->egg) {
 		if (!tn->ees || !tn->eet || !tn->eec) {
 			fprintf(stderr, "Power Egg mounts not developed yet!\n");
@@ -385,6 +385,7 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 	b->cruise_alt = min(b->ceiling, 10.0f) +
 			max(b->ceiling - 10.0f, 0) / 2.0f;
 	b->cruise_spd = airspeed(b, b->cruise_alt);
+	b->init_climb = climb_rate(b, 0.0f);
 	b->deck_spd = airspeed(b, 0.0f);
 	b->ferry = b->tanks.hours * b->cruise_spd;
 	b->range = b->ferry * 0.6f - 150.0f;
@@ -505,164 +506,4 @@ int calc_bomber(struct bomber *b, struct tech_numbers *tn)
 		return rc;
 
 	return 0;
-}
-
-const char *describe_ftype(enum fuse_type ft)
-{
-	switch (ft) {
-	case FT_NORMAL:
-		return "normal";
-	case FT_SLENDER:
-		return "slender";
-	case FT_SLABBY:
-		return "slab-sided";
-	case FT_GEODETIC:
-		return "geodetic";
-	default:
-		return "error!  unknown type";
-	}
-}
-
-const char *describe_bbg(enum bb_girth girth)
-{
-	switch (girth) {
-	case BB_SMALL:
-		return "small bombs";
-	case BB_MEDIUM:
-		return "medium bombs";
-	case BB_COOKIE:
-		return "large bombs";
-	default:
-		return "error!  unknown girth";
-	}
-}
-
-const char *describe_esl(enum elec_level esl)
-{
-	switch (esl) {
-	case ESL_LOW:
-		return "low power";
-	case ESL_HIGH:
-		return "high power";
-	case ESL_STABLE:
-		return "high power, stable voltage";
-	default:
-		return "error!  unknown electric supply level";
-	}
-}
-
-char crew_to_letter(enum crewpos c)
-{
-	switch (c) {
-	case CCLASS_P:
-		return 'P';
-	case CCLASS_N:
-		return 'N';
-	case CCLASS_B:
-		return 'B';
-	case CCLASS_W:
-		return 'W';
-	case CCLASS_E:
-		return 'E';
-	case CCLASS_G:
-		return 'G';
-	default:
-		return '?';
-	}
-}
-
-enum crewpos letter_to_crew(char c)
-{
-	switch (c) {
-	case 'P':
-		return CCLASS_P;
-	case 'N':
-		return CCLASS_N;
-	case 'B':
-		return CCLASS_B;
-	case 'W':
-		return CCLASS_W;
-	case 'E':
-		return CCLASS_E;
-	case 'G':
-		return CCLASS_G;
-	default:
-		return CREW_CLASSES;
-	}
-}
-
-void dump_bomber_info(struct bomber *b)
-{
-	struct engine *e = b->engines.typ;
-	bool comma = false;
-	unsigned int i, j;
-	char crew[33];
-
-	printf("[M]anufacturer: %s\n", b->manf->name);
-	printf("[E]ngines: %u × %s %s (%u hp, SCL %u%s)\n",
-	       b->engines.number, e->manu, e->name, e->bhp, e->scl,
-	       b->engines.egg ? ", Power Egg" : "");
-	printf("[T]urrets:");
-	for (i = LXN_NOSE; i < LXN_COUNT; i++) {
-		struct turret *t = b->turrets.typ[i];
-
-		if (t) {
-			printf("%s %s", comma ? "," : "", t->name);
-			comma = true;
-		}
-	}
-	putchar('\n');
-	printf("[W]ing: %u sq ft; aspect ratio %.1f\n",
-	       b->wing.area, b->wing.ar);
-	j = 0;
-	for (i = 0; i < b->crew.n; i++) {
-		struct crewman *m = b->crew.men + i;
-
-		crew[j++] = crew_to_letter(m->pos);
-		if (m->gun)
-			crew[j++] = '*';
-	}
-	crew[j] = 0;
-	printf("[C]rew: %s\n", crew);
-	printf("[B]omb bay: %ulb, %s\n", b->bay.cap,
-	       describe_bbg(b->bay.girth));
-	printf("[F]uselage: %s\n", describe_ftype(b->fuse.typ));
-	printf("E[l]ectrics: %s\n", describe_esl(b->elec.esl));
-	printf("F[u]el: %.1f hours%s\n", b->tanks.hours,
-	       b->tanks.sst ? ", self-sealing" : "");
-	if (b->error)
-		printf("Design contains errors!  Please review.\n");
-	else if (b->warning)
-		printf("Design contains warnings!  Consider reviewing.\n");
-}
-
-void dump_bomber_calcs(struct bomber *b)
-{
-	printf("Dimensions: span %.1fft, chord %.1fft\n",
-	       b->wing.span, b->wing.chord);
-	printf("Weights: tare %.0flb, gross %.0flb; wing loading %.1flb/sq ft\n", b->tare, b->gross, b->wing.wl);
-	printf("\t(core %.0flb, fuse %.0flb, wing %.0flb, eng %.0flb, tanks %.0flb)\n",
-	       b->core_tare, b->fuse.tare, b->wing.tare, b->engines.tare,
-	       b->tanks.tare);
-	printf("\t(gun %.0flb, ammo %.0flb, crew %.0flb, bay %.0flb, fuel %.0flb)\n",
-	       b->turrets.tare, b->turrets.ammo,
-	       b->crew.gross + b->crew.tare, b->bay.tare, b->tanks.mass);
-	printf("Speeds: take-off %.1fmph, max %.1fmph, cruise %.1fmph at %.0fft\n",
-	       b->takeoff_spd, b->deck_spd, b->cruise_spd,
-	       b->cruise_alt * 1000.0f);
-	printf("Service ceiling: %.0fft; range: %.0fmi; initial climb %.0ffpm\n",
-	       b->ceiling * 1000.0f, b->range, climb_rate(b, 0.0f));
-	printf("Survivability %.1f/%.1f; Reliability %.1f; Serviceability %.1f\n",
-	       b->defn[0], b->defn[1], (1.0f - b->fail) * 100.0f,
-	       b->serv * 100.0f);
-	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.1f))\n",
-	       b->roll_pen, b->turn_pen, b->evade_factor, b->vuln, b->tanks.ratio);
-	printf("Cost: %.0f funds\n", b->cost);
-	printf("\t(core %.0f, fuse %.0f, wing %.0f, eng %.0f, gun %.0f, elec %.0f)\n",
-	       b->core_cost, b->fuse.cost, b->wing.cost, b->engines.cost,
-	       b->turrets.cost, b->elec.cost);
-	printf("Prototype in %.0f days for %.0f funds\n",
-	       b->tproto, b->cproto);
-	printf("Production in %.0f days for %.0f funds\n",
-	       b->tprod, b->cprod);
 }

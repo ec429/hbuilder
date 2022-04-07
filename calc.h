@@ -152,7 +152,7 @@ struct bomber {
 	float takeoff_spd;
 	float ceiling; /* thousands ft */
 	float cruise_alt, cruise_spd;
-	float deck_spd;
+	float init_climb, deck_spd;
 	float range;
 	float ferry;
 	float roll_pen, turn_pen, manu_pen;
@@ -168,14 +168,5 @@ struct bomber {
 
 void init_bomber(struct bomber *b, struct manf *m, struct engine *e);
 int calc_bomber(struct bomber *b, struct tech_numbers *tn);
-
-const char *describe_ftype(enum fuse_type ft);
-const char *describe_bbg(enum bb_girth girth);
-const char *describe_esl(enum elec_level esl);
-char crew_to_letter(enum crewpos c);
-enum crewpos letter_to_crew(char c);
-
-void dump_bomber_info(struct bomber *b);
-void dump_bomber_calcs(struct bomber *b);
 
 #endif // _CALC_H
