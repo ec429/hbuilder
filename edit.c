@@ -307,6 +307,99 @@ static int edit_manf(struct bomber *b, struct tech_numbers *tn,
 	return -EIO;
 }
 
+static int edit_eng(struct bomber *b, struct tech_numbers *tn,
+		    const struct entities *ent)
+{
+	unsigned int i;
+	int c;
+
+	printf(">Select engine (0 to cancel) or number\n");
+	for (i = 0; i < ent->neng; i++)
+		printf("[%c] %s %s\n", i + 'A', ent->eng[i]->manu,
+		       ent->eng[i]->name);
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		i = c - '0';
+		if (i >= 1 && i < 9) {
+			b->engines.number = i;
+			putchar('>');
+			dump_engines(b);
+			return 0;
+		}
+		i = c - 'A';
+		if (i < 0 || i >= ent->neng) {
+			putchar('?');
+			continue;
+		}
+		b->engines.typ = ent->eng[i];
+		putchar('>');
+		dump_engines(b);
+		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
+static bool gun_conflict(const struct bomber *b, const struct turret *t)
+{
+	if (t->lxn == LXN_NOSE && b->engines.odd)
+		return true;
+	return b->turrets.typ[t->lxn] != NULL;
+}
+
+static int edit_guns(struct bomber *b, struct tech_numbers *tn,
+		     const struct entities *ent)
+{
+	unsigned int i;
+	int c;
+
+	printf(">Select turret to add, number to remove, or 0 to cancel\n");
+	for (i = 0; i < ent->ngun; i++)
+		if (ent->gun[i]->unlocked && !gun_conflict(b, ent->gun[i]))
+			printf("[%c] %s\n", i + 'A', ent->gun[i]->name);
+	for (i = LXN_NOSE; i < LXN_COUNT; i++)
+		if (b->turrets.typ[i])
+			printf("[%d] %s\n", i, b->turrets.typ[i]->name);
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		i = c - '0';
+		if (i >= LXN_NOSE && i < LXN_COUNT && b->turrets.typ[i]) {
+			b->turrets.typ[i] = NULL;
+			putchar('>');
+			dump_turrets(b);
+			return 0;
+		}
+		i = c - 'A';
+		if (i < 0 || i >= ent->ngun || !ent->gun[i]->unlocked ||
+		    gun_conflict(b, ent->gun[i])) {
+			putchar('?');
+			continue;
+		}
+		b->turrets.typ[ent->gun[i]->lxn] = ent->gun[i];
+		putchar('>');
+		dump_turrets(b);
+		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
 int edit_loop(struct bomber *b, struct tech_numbers *tn,
 	      const struct entities *ent)
 {
@@ -353,6 +446,14 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 'm':
 		case 'M':
 			rc = edit_manf(b, tn, ent);
+			break;
+		case 'e':
+		case 'E':
+			rc = edit_eng(b, tn, ent);
+			break;
+		case 't':
+		case 'T':
+			rc = edit_guns(b, tn, ent);
 			break;
 		default:
 			putchar('?');

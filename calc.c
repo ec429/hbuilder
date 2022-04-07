@@ -14,13 +14,13 @@ void init_bomber(struct bomber *b, struct manf *m, struct engine *e)
 	b->manf = m;
 	b->engines.number = 1;
 	b->engines.typ = e;
-	b->wing.area = 100;
+	b->wing.area = 200;
 	b->wing.art = 70;
 	b->crew.n = 2;
 	b->crew.men[0] = (struct crewman){.pos = CCLASS_P};
 	b->crew.men[1] = (struct crewman){.pos = CCLASS_N};
 	b->bay.cap = 1000;
-	b->tanks.ht = 50;
+	b->tanks.ht = 60;
 }
 
 static int calc_engines(struct bomber *b, struct tech_numbers *tn)
@@ -42,14 +42,14 @@ static int calc_engines(struct bomber *b, struct tech_numbers *tn)
 	}
 	e->power_factor = e->number - (e->odd ? 0.1f : 0.0f);
 	e->vuln = e->typ->vul / 100.0f;
-	e->rely1 = 1.0f - powf(1.0f - e->typ->fai / 100.0f, e->number);
+	e->rely1 = 1.0f - powf(1.0f - e->typ->fai / 1000.0f, e->number);
 	if (e->number > 1)
-		e->rely2 = e->rely1 - e->number * (e->typ->fai / 100.0f) *
-				      powf(1.0f - (e->typ->fai / 100.0f),
+		e->rely2 = e->rely1 - e->number * (e->typ->fai / 1000.0f) *
+				      powf(1.0f - (e->typ->fai / 1000.0f),
 					   e->number - 1);
 	else
-		e->rely2 = e->rely1 / 10.0f;
-	e->serv = 1.0f - powf(1.0f - (e->typ->svc / 100.0f) * ees,
+		e->rely2 = e->rely1;
+	e->serv = 1.0f - powf(1.0f - (e->typ->svc / 1000.0f) * ees,
 			      e->number);
 	e->cost = e->number * e->typ->cos * eec * (1.0f + 0.5f * tn->emc / 100.0f);
 	if (e->number > 3) {
@@ -94,7 +94,7 @@ static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
 	t->serv = 1.0f;
 	t->cost = 0;
 	if (t->typ[LXN_NOSE] && b->engines.odd) {
-		fprintf(stderr, "Turret in nose position conflicts with engine\n");
+		fprintf(stderr, "Turret in nose position conflicts with engine!\n");
 		b->error = true;
 	}
 	for (j = 0; j < GC_COUNT; j++)
@@ -135,7 +135,7 @@ static int calc_wing(struct bomber *b, struct tech_numbers *tn)
 	w->ar = w->art / 10.0f;
 	/* Make sure there's no risk of calculations blowing up */
 	if (w->ar < 1.0) {
-		fprintf(stderr, "Wing aspect ratio too low\n");
+		fprintf(stderr, "Wing aspect ratio too low!\n");
 		b->error = true;
 		return -EINVAL;
 	}
@@ -177,7 +177,7 @@ static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 	c->tare = c->n * tn->cmi;
 	c->gross = c->n * 168;
 	if (c->gunners < b->turrets.need_gunners) {
-		fprintf(stderr, "Fewer gunners than turrets, defence will be weakened\n");
+		fprintf(stderr, "Fewer gunners than turrets, defence will be weakened.\n");
 		b->warning = true;
 	}
 	c->cct = c->tare * (tn->ccc / 100.0f - 1.0f);
@@ -191,7 +191,7 @@ static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
 	struct bombbay *a = &b->bay;
 
 	if (a->girth < 0 || a->girth >= BB_COUNT) { /* can't happen */
-		fprintf(stderr, "Nonexistent bombbay girth\n");
+		fprintf(stderr, "Nonexistent bombbay girth!\n");
 		b->error = true;
 		return -EINVAL;
 	}
@@ -215,12 +215,12 @@ static int calc_fuselage(struct bomber *b, struct tech_numbers *tn)
 	b->core_tare = (b->turrets.tare + b->crew.tare + b->bay.tare) *
 		       b->manf->act / 100.0f;
 	if (f->typ < 0 || f->typ >= FT_COUNT) { /* can't happen */
-		fprintf(stderr, "Nonexistent fuselage type\n");
+		fprintf(stderr, "Nonexistent fuselage type!\n");
 		b->error = true;
 		return -EINVAL;
 	}
 	if (f->typ == FT_GEODETIC && !b->manf->geo) {
-		fprintf(stderr, "This manufacturer cannot design geodetics\n");
+		fprintf(stderr, "This manufacturer cannot design geodetics!\n");
 		b->error = true;
 	}
 	f->tare = b->core_tare * (tn->ft[f->typ] / 100.0f) *
@@ -239,7 +239,7 @@ static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 	struct electrics *e = &b->elec;
 
 	if (e->esl > tn->esl) {
-		fprintf(stderr, "Level %d electrics not developed yet\n", e->esl);
+		fprintf(stderr, "Level %d electrics not developed yet!\n", e->esl);
 		b->error = true;
 	}
 	/* This is all hard-coded; datafiles / techlevels don't get to
@@ -257,7 +257,7 @@ static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 			  500.0f / max(b->engines.number, 1);
 		break;
 	default: /* can't happen */
-		fprintf(stderr, "Nonexistent electric supply level\n");
+		fprintf(stderr, "Nonexistent electric supply level!\n");
 		b->error = true;
 		return -EINVAL;
 	}
@@ -274,13 +274,13 @@ static int calc_tanks(struct bomber *b, struct tech_numbers *tn)
 	t->cost = t->tare * (tn->fuc / 100.0f);
 	t->ratio = t->mass / max(b->wing.tare, 1.0f);
 	if (t->ratio > 2.5f) {
-		fprintf(stderr, "Wing is crammed with fuel, vulnerability high!\n");
+		fprintf(stderr, "Wing is crammed with fuel, vulnerability high.\n");
 		b->warning = true;
 	}
 	t->vuln = t->ratio * tn->fuv / 400.0f;
 	if (t->sst) {
 		if (!tn->sft || !tn->sfc || !tn->sfv) {
-			fprintf(stderr, "Self sealing tanks not developed yet\n");
+			fprintf(stderr, "Self sealing tanks not developed yet!\n");
 			b->error = true;
 		}
 		t->tare *= tn->sft / 100.0f;
@@ -379,6 +379,13 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 	b->drag = b->wing.drag + b->fuse.drag + b->engines.drag +
 		  b->turrets.drag;
 	b->takeoff_spd = wing_minv(&b->wing, b->gross, 0.0f) * 1.6f;
+	if (b->takeoff_spd > 132.0f) {
+		fprintf(stderr, "Take-off speed is dangerously high!\n");
+		b->error = true;
+	} else if (b->takeoff_spd > 120.0f) {
+		fprintf(stderr, "Take-off speed is worryingly high.\n");
+		b->warning = true;
+	}
 	rc = calc_ceiling(b, tn);
 	if (rc)
 		return rc;
@@ -386,9 +393,23 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 			max(b->ceiling - 10.0f, 0) / 2.0f;
 	b->cruise_spd = airspeed(b, b->cruise_alt);
 	b->init_climb = climb_rate(b, 0.0f);
+	if (b->init_climb < 400.0f) {
+		fprintf(stderr, "Design can barely take off!\n");
+		b->error = true;
+	} else if (b->init_climb < 640.0f) {
+		fprintf(stderr, "Climb rate is very slow.\n");
+		b->warning = true;
+	}
 	b->deck_spd = airspeed(b, 0.0f);
 	b->ferry = b->tanks.hours * b->cruise_spd;
-	b->range = b->ferry * 0.6f - 150.0f;
+	b->range = max(b->ferry * 0.6f - 150.0f, 0.0f);
+	if (b->range < 300.0f) {
+		fprintf(stderr, "Range is far too low!\n");
+		b->error = true;
+	} else if (b->range < 500.0f) {
+		fprintf(stderr, "Range is on the low side.\n");
+		b->warning = true;
+	}
 	return 0;
 }
 
