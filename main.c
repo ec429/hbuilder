@@ -3,6 +3,7 @@
 
 #include "data.h"
 #include "calc.h"
+#include "edit.h"
 
 void error(const char *msg, int rc)
 {
@@ -36,6 +37,7 @@ void empty_techs(struct list_head *techs)
 int main(void)
 {
 	struct list_head guns, engines, manfs, techs;
+	struct entities entities;
 	struct tech_numbers tn;
 	struct bomber b;
 	int rc;
@@ -81,7 +83,7 @@ int main(void)
 		error("Failed to init techs", rc);
 		return 1;
 	}
-	fprintf(stderr, "Initialised tech numbers\n");
+	fprintf(stderr, "Initialised tech state\n");
 
 	init_bomber(&b, list_first_entry(&manfs, struct manf),
 		    list_first_entry(&engines, struct engine));
@@ -92,8 +94,14 @@ int main(void)
 	}
 	fprintf(stderr, "Prepared blank bomber\n");
 
-	dump_bomber_info(&b);
-	dump_bomber_calcs(&b);
+	rc = populate_entities(&entities, &guns, &engines, &manfs, &techs);
+	if (rc < 0) {
+		error("Failed to create entity arrays", rc);
+		return 1;
+	}
+	fprintf(stderr, "Initialised editor\n");
+
+	edit_loop(&b, &tn, &entities);
 
 	fprintf(stderr, "Cleaning up...\n");
 	free_techs(&techs);
