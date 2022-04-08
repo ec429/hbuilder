@@ -56,7 +56,7 @@ const char *describe_bbg(enum bb_girth girth)
 	}
 }
 
-static const char *describe_esl(enum elec_level esl)
+const char *describe_esl(enum elec_level esl)
 {
 	switch (esl) {
 	case ESL_LOW:

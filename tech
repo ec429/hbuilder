@@ -1,6 +1,6 @@
 _MB:G4T=0:G4C=0:n=Medium Bombers:y=0
 _CA:CMI=165:CES=100:CCC=100:n=Crew Accommodation:y=0
-_PD:CLT=21:n=Pre-War Doctrine:y=0
+_PD:CLT=20:n=Pre-War Doctrine:y=0
 _BF:FTN=150:FTT=100:FTS=90:FTG=170:FDN=50:FDT=30:FDS=72:FDG=54:FWT=135:FSN=30:FST=64:FSS=27:FSG=20:FFN=30:FFT=40:FFS=27:FFG=20:FVN=20:FVT=30:FVS=20:FVG=8:n=Basic Fuselages:y=0
 _BM:CCN=100:CCT=160:CCS=80:CCG=100:FCN=100:FCT=160:FCS=70:FCG=110:n=Basic Manufacturing:y=0
 _CW:WTS=150:WTC=120:WTF=100:WLD=108:WCF=100:n=Cantilever Wings:y=0
@@ -13,7 +13,7 @@ FEB:G4T=180:G4C=100:n=Four Engined Bombers:y=1940
 MFE:G4T=80:G4C=95:r=FEB:n=Mature Four-Engine Layout:y=1942
 CRS:CMI=170:CES=110:CCC=105:n=Crew Stations:y=1940
 ICS:CMI=135:CCC=108:r=CRS:n=Improved Crew Stations:y=1943
-DHA:CLT=45:n=High Altitude Doctrine:y=1941
+DHA:CLT=27:n=High Altitude Doctrine:y=1941
 IGF:FTG=140:FCG=120:n=Improved Geodetics:y=1940
 RFF:FTN=110:FTT=80:FDN=45:FDT=27:FCN=150:FCT=220:FDS=68:n=Refined Fuselages:y=1941
 GSF:FDG=48:FCG=130:r=IGF:n=Geodetic Streamlining:y=1941
