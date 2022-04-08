@@ -329,7 +329,7 @@ static int calc_tanks(struct bomber *b, struct tech_numbers *tn)
 	t->tare = t->mass * (tn->fut / 1000.0f);
 	t->cost = t->tare * (tn->fuc / 100.0f);
 	t->ratio = t->mass / max(b->wing.tare, 1.0f);
-	if (t->ratio > 2.5f) {
+	if (t->ratio > (t->sst ? 2.5f : 2.0f)) {
 		fprintf(stderr, "Wing is crammed with fuel, vulnerability high.\n");
 		b->warning = true;
 	}

@@ -524,11 +524,11 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 	unsigned int i;
 	int c;
 
-	printf(">[B]omb capacity or [");
+	printf(">[B]omb capacity, [");
 	for (i = 0; i < BB_COUNT; i++)
 		if (tn->bt[i])
 			putchar("SMC"[i]);
-	printf("] to set girth\n");
+	printf("] to set girth, or 0 to cancel\n");
 	do {
 		c = getchar();
 		if (c == EOF)
@@ -575,7 +575,7 @@ static int edit_fuse(struct bomber *b, struct tech_numbers *tn)
 	unsigned int i;
 	int c;
 
-	printf(">Select fuselage type\n");
+	printf(">Select fuselage type, or 0 to cancel\n");
 	for (i = 0; i < FT_COUNT; i++)
 		if (i != FT_GEODETIC || b->manf->geo)
 			printf("[%c] %s\n", i + '1', describe_ftype(i));
@@ -609,7 +609,7 @@ static int edit_elec(struct bomber *b, struct tech_numbers *tn)
 	unsigned int i;
 	int c;
 
-	printf(">Select electrics level\n");
+	printf(">Select electrics level, or 0 to cancel\n");
 	for (i = 0; i < ESL_COUNT; i++)
 		if (i <= tn->esl)
 			printf("[%c] %s\n", i + '1', describe_esl(i));
