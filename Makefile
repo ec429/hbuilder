@@ -9,7 +9,7 @@ hbuilder: main.o $(OBJS)
 %.o: %.c %.h list.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
 
-calc.o: data.h
+calc.o: data.h edit.h
 
 edit.o: calc.h data.h
 
