@@ -1,50 +1,31 @@
 Manufacturer/Designer
 
 Each choice gives certain bonuses/maluses.
+* Armstrong Whitworth
+  + reduced tare weight of low aspect ratio wings
+  + reduced tare weight of slab-sided fuselage
+  + reduced mounting weight for Armstrong-Siddeley engines
 * Avro
   + reduced weight penalty for big/strong bomb bay
-  - cost slightly higher
+  - increased cost of airframe
 * Bristol
   + better manœuvrability
+  + reduced mounting weight for Bristol engines
 * de Havilland
-  + sleek fuselages
+  + reduced drag of normal fuselage
+  - increased tare weight of normal fuselage
+  - slightly slower development
 * Handley Page
+  · no specials at all (yet!)
 * Short Bros
   + cost is less sensitive to size
-  - increased tare
+  - increased tare weight
+  - reduced serviceability
 * Supermarine
-  + extra speed
+  + increased wing lift/drag ratio
+  + reduced fuselage drag
   - slower development
   "Supermarine are the experts in high-speed aviation.  But their development times are not so quick."
-* Vickers/Armstrongs
-
-Data
-
-Armstrongs
-: wing arpen goes down to 6.0 instead of 8.0
-: -20% mounting weight for Armstrong-Siddeley engines
-: -10% tare for FuseType.SLABBY
-Avro
-: bomb bay
-:: -8% for BBGirth.COOKIE
-:: factor base +1000
-: +5% to airframe cost (i.e. excl engines, turrets)
-Bristol
-: -20% mounting weight for Bristol engines
-: turn penalty for wing loading starts at 18 instead of 16
-dH
-: -10% drag for FuseType.NORMAL
-: +10% tare for FuseType.NORMAL
-HP
-: no specials at all?
-: hidden flaws (rudder)
-Shorts
-: +8% to core/fuse tare
-: -20% to core/fuse cost
-: 0.9 power scaling of wing cost
-: -15pp to serviceability
-Supermarine
-: +5% to wing L/D
-: -10% to fuse drag
-Vickers
-: allows FuseType.GEODETIC
+* Vickers
+  + allows geodetic fuselage
+  + slightly faster development

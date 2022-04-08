@@ -10,8 +10,143 @@ Most of the relevant gameplay rules haven't been nailed down yet; currently
  we're just experimenting with the design calculations.
 
 hb.py implements an early prototype of the calculator, without tech levels.
-hbuilder (the C program) will implement the full calculator, and an
- interactive frontend to drive it.  This will doubtless uncover some
+hbuilder (the C program) implements the full calculator, and an interactive
+ frontend to drive it.  Further experimentation is likely to uncover some
  infelicities in the existing design calculations...
 
 hbuilder is licensed under the GNU GPL version 2.
+
+USING THE EDITOR
+
+The editor's (somewhat primitive) UI is conversational, with most actions
+ driven by single-character commands.  In the main mode these commands are
+ displayed by a help banner at program startup, which can be re-shown with
+ the H command.
+All command letters except Q are case-insensitive; however, keys to select
+ from a list are case-sensitive.
+
+MAIN MODE COMMANDS
+
+I (info) will show the current design inputs, along with a mnemonic for the
+ command to edit each input.  For instance, the line
+    [W]ing: 200 sq ft; aspect ratio 7.0; [C]rew: PN
+ indicates that the W command can be used to edit the wing area or aspect
+ ratio, while the C command can be used to edit the crew; the current
+ settings of these values are also shown.
+
+Return (newline) will show the current design outputs, including breakdowns
+ of weight and cost, and performance figures.
+The Survivability figure is split in two for before/after the enemy mounts
+ Schräge Musik upward-firing guns on fighters, and is followed by some
+ intermediate results from the calculation (in all cases lower is better):
+ - roll and turn are manœuvrability figures
+ - evade is a combination of manœuvrability and height/speed to avoid
+   fighter attack
+ - vuln(erability) is susceptibility to damage
+ - fr (fuel ratio) is weight of fuel divided by tare weight of wings (this
+   contributes to vuln through fire risk)
+Prototype and Production give the time and cost required to build and test
+ a prototype and to tool up for series production of the design.
+
+Q (quit) will exit without saving; for this reason it must be pressed twice
+ in a row with no intervening commands, and unlike most commands must be in
+ uppercase.
+
+D (dump) will generate a "dump block", a series of commands that should
+ regenerate the current design.  This is a primitive 'save' option until a
+ proper file format is implemented.  Note that the commands in the dump
+ block will only function correctly if the technology state allows for all
+ the enumerated items used by the design.
+
+X (review) will re-display any warnings or errors.
+
+The editing commands (METWCBFLUR) each enter a mode to edit that specific
+ aspect of the design, detailed in the next section.
+
+EDITING COMMANDS
+
+[M]anufacturer displays a list of available manufacturers, and keypresses
+ to select them (by default these are numbers, but if there are more than
+ nine options in the data files then they just continue in ASCII order,
+ starting with ':').  Pressing 0 will leave the mode without making any
+ changes.
+Each manufacturer has its own set of bonuses and maluses which apply to the
+ design.  These are described in human-readable form in file `hbm`; the
+ machine-readable data are in file `manu`.
+When the builder is integrated into Harris, each manufacturer will only be
+ able to have one design under development (prototyping or tooling for mass
+ production) at a time, so the optimal manufacturer may not be available,
+ and you may have to choose one with less valuable bonuses to the design.
+
+[E]ngines displays a list of available engines, selected with letter keys.
+ Pressing a number will set the engine count, or 0 will leave the mode
+ without making any changes.
+Stats for each engine are defined in file `eng`.  These include 'SCL', or
+ supercharging level (1=single-speed, 2=two-speed, 3=two-stage), which
+ affects high-altitude performance.
+
+[T]urrets displays available turrets to add, selected with letter keys;
+ also existing turrets to remove, selected with number keys.  As usual, 0
+ will leave the mode without making any changes.
+Each turret takes up one of six location slots; you cannot add two turrets
+ to the same slot.  Moreover, the nose slot is unavailable if you have an
+ odd number of engines.  Survivability is helped by having guns covering
+ several directions, but the weight and drag of the turrets will reduce
+ aircraft performance.  Stats for each turret are defined in file `guns`.
+
+[W]ing gives the choice of two sub-modes; press A to set the wing area or
+ R to set the aspect ratio.  Then, enter an integer; note that for [R]atio
+ this is in units of 0.1.
+
+[C]rew can be used to add a crewman (either a [P]ilot, [N]avigator, [B]omb-
+ aimer, [W]ireless-op, [E]ngineer or [G]unner), remove an existing crewman
+ (by index in the list, e.g. [3] removes the third crewman), or toggle
+ whether a crewman (B or W only) should dual-role as a gunner ([*] followed
+ by number).
+Every aircraft must have a Pilot and Navigator.  There is rarely any
+ benefit to having more than one of anything other than Gunners.  The value
+ of Bomb-aimers, Wireless-ops and Engineers occurs mostly on an operational
+ level that doesn't appear in the stats calculated by the editor.
+
+[B]omb bay gives the choice of selecting girth ([S]mall, [M]edium or
+ [C]ookie) or pressing [B] again to input the bomb capacity in lb.
+Girth determines whether the aircraft can carry High Capacity bombs such as
+ the 4,000lb "cookie"; Medium cannot close the doors over a cookie so
+ incurs a speed penalty when carrying it (6% in the current Harris code),
+ while Small cannot carry it at all.  Selecting a greater girth incurs a
+ tare weight penalty.
+
+[F]uselage offers a choice of fuselage types, selected with number keys.
+ Slender fuselages offer lower tare weight and drag, but increase cost and
+ vulnerability, and reduce serviceability and reliability, from cramming
+ lots of equipment into a narrow space.  Slab-sided fuselages are even
+ lighter, but draggy; they are cheap to produce and easy to maintain.  Some
+ early gun turrets may require a slab-sided fuselage.  Geodetic structure
+ (only available from Vickers) is a little heavier and draggier than Normal
+ fuselages, but is very rugged and robust, improving survivability and
+ serviceability.
+
+[L] offers a choice of electric supply levels.  Low power electrics only
+ drive the aircraft's essential systems; the GEE navaid requires high power
+ electrics, while sophisticated navaids like OBOE, H2S and GEE-H need the
+ level 3 'stable voltage supply'.  Higher-level electric systems increase
+ cost, particularly for aircraft with few engines; the combination of level
+ 3 electrics with a slender fuselage incurs an additional cost penalty.
+
+[U] is used to set the fuel capacity in tenths of an hour; alternatively
+ enter 1 to disable self-sealing tanks, 2 to enable them, or 0 to leave the
+ mode without making changes.
+Self-sealing fuel tanks greatly reduce vulnerability, though increase tare
+ weight and cost.
+
+[R]esearch doesn't edit the aircraft directly, rather it allows you to
+ alter the technology levels used to calculate the design (which may also
+ unlock various items in the editor such as engines, turrets, electric
+ supply levels or self-sealing tanks).  In-game you would only be able to
+ design with whatever tech level you have at the time, but in the stand-
+ alone editor you can explore to your heart's content.
+Techs have an approximate year (though in-game they may unlock sooner or
+ later than this); pressing [@] allows you to enter a year to unlock all
+ techs up to that year and lock all later techs.  Year 2 techs are
+ available from the start of the game, but not available for the bulk of
+ the legacy fleet if you choose to design that (exact gameplay TBD).
