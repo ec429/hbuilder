@@ -5,7 +5,7 @@ _BF:FTN=150:FTT=100:FTS=90:FTG=170:FDN=50:FDT=30:FDS=72:FDG=54:FWT=135:FSN=30:FS
 _BM:CCN=100:CCT=160:CCS=80:CCG=100:FCN=100:FCT=160:FCS=70:FCG=110:n=Basic Manufacturing:y=0
 _CW:WTS=150:WTC=120:WTF=100:WLD=100:WCF=100:n=Cantilever Wings:y=0
 _FT:FUT=120:FUV=100:FGV=80:SFT=0:SFV=0:SFC=0:FUC=60:n=Fuel Tanks:y=0
-_PE:e=Merc:e=Mer4:e=Tigr:ETF=140:EDF=100:EES=0:EET=0:EEC=0:EMC=100:n=Pre-War Engines:y=0
+_PE:e=Merc:e=Mer4:e=Tigr:ETF=150:EDF=100:EES=0:EET=0:EEC=0:EMC=100:n=Pre-War Engines:y=0
 _BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Beam:t=Tail:GTF=175:GDF=24:GCF=100:GAC=30:GAM=180:n=Basic Turrets:y=0
 _IB:BTS=70:BTM=100:BTC=0:BMC=0:BBB=8:BBF=2:n=Internal Bay:y=0
 _ED:ESL=0:n=Engine Dynamo:y=0
@@ -27,7 +27,7 @@ LFT:FUT=100:FUC=81:n=Lightweight Fuel Tanks:y=1941
 IFT:FUT=90:FUV=90:FUC=96:r=LFT:n=Improved Fuel Tanks:y=1942
 HPE:ESL=1:n=High Power Electrics:y=1941
 SVS:ESL=2:r=HPE:n=Stable Voltage Supply:y=1942
-LPE:e=Pega:e=MerX:e=Dagg:i=1:n=1939 Engines:y=0
+LPE:e=Pega:e=MerX:e=Dagg:n=1939 Engines:y=2
 X24:e=Vult:e=Sab2:n=24-Cylinder Engines:y=1940
 VUR:e=Vul5:r=X24:n=Vulture Reliability:y=1942
 SAB:e=Sab5:r=X24:n=Evolved Sabre:y=1944
@@ -39,8 +39,8 @@ SVG:e=He18:e=Cen7:r=RSV:n=Sleeve Valve Growth:y=1943
 TRR:e=Deer:n=Triple-Row Radials:y=1941
 CLE:EDF=90:EMC=110:n=Clean Entry:y=1942
 EGG:EES=90:EET=105:EEC=95:n=Power Egg:y=1941
-IEM:ETF=120:EMC=120:r=CLE:n=Improved Engine Mountings:y=1943
-DUT:t=Vent:i=1:n=Dustbin Turret:y=0
+IEM:ETF=125:EMC=120:r=CLE:n=Improved Engine Mountings:y=1943
+DUT:t=Vent:n=Dustbin Turret:y=2
 ARM:t=Dors:t=Daft:t=Vaft:t=Wast:n=Armament Improvements:y=1939
 QUT:t=Dor4:t=Tai4:r=ARM:n=Quad Turrets:y=1941
 IVT:t=Ven2:r=DUT:n=Improved Ventral Turrets:y=1942

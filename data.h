@@ -1,8 +1,8 @@
-#include <stdbool.h>
-#include "list.h"
-
 #ifndef _DATA_H
 #define _DATA_H
+
+#include <stdbool.h>
+#include "list.h"
 
 enum turret_location {
 	LXN_UNSPEC,
@@ -116,19 +116,31 @@ struct tech_numbers {
 struct tech {
 	struct list_head list;
 	char ident[4];
-	unsigned int year, inter;
+	unsigned int year;
 	struct tech_numbers num;
 	struct tech *req[8];
 	struct engine *eng[16];
 	struct turret *gun[16];
 	char *name;
-	bool unlocked;
+	bool unlocked, have_reqs;
 };
 
 int load_techs(struct list_head *head, struct list_head *engines,
 	       struct list_head *guns);
 int free_techs(struct list_head *head);
 
-int apply_techs(struct list_head *techs, struct tech_numbers *tn);
+struct entities {
+	unsigned int ngun, neng, nmanf, ntech;
+	struct turret **gun;
+	struct engine **eng;
+	struct manf **manf;
+	struct tech **tech;
+};
+
+int populate_entities(struct entities *ent, struct list_head *guns,
+		      struct list_head *engines, struct list_head *manfs,
+		      struct list_head *techs);
+
+int apply_techs(const struct entities *ent, struct tech_numbers *tn);
 
 #endif // _DATA_H

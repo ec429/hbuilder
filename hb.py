@@ -664,7 +664,7 @@ class Bomber(object):
         return self.fight_factor(schrage) + self.flak_factor
 
 def statblock(b):
-    print "Tare:    %5d (wings %5d engines %4d turrets %3d bay %4d fuse %4d tanks %4d)" % (b.tare, b.wing.tare, b.engines.tare, b.guntare, b.bay.tare, b.fuse_tare, b.fuel_tare)
+    print "Tare:    %5d (core %4d wings %5d eng %4d gun %3d bay %4d fuse %4d tanks %4d)" % (b.tare, b.core_tare, b.wing.tare, b.engines.tare, b.guntare, b.bay.tare, b.fuse_tare, b.fuel_tare)
     print "Gross:   %5d (fuel %5d bombs %5d ammo %4d) [AUW %5d/%5d/%5d]" % (b.gross, b.fuelmass, b.bay.cap, b.gunammo, b.all_up_wt(90.0), b.all_up_wt(99.0), b.all_up_wt(108.0))
     print "Drag:    %5d (wings %4d fuse %4d engines %4d turrets %4d; ld %4.1f)" % (b.drag, b.wing_drag, b.fuse_drag, b.engines.drag, b.gundrag, b.wing.ld)
     print "Speed:   %5.1fmph @ SL; %5.1fmph cruise @ %5dft; %5.1fmph take-off" % (b.speed_at_alt(0), b.cruising_speed, 1000 * b.cruising_alt, b.takeoff_speed)
@@ -676,7 +676,7 @@ def statblock(b):
 mediums = True
 whitleys = False
 wellies = False
-heavies = True
+heavies = False
 mossies = False
 lancs = False
 supers = False

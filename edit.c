@@ -6,58 +6,6 @@
 #include <errno.h>
 #include "edit.h"
 
-/* While lists were handy for loading the data, in the editor we'd rather
- * have an array that we can quickly index into.
- */
-int populate_entities(struct entities *ent, struct list_head *guns,
-		      struct list_head *engines, struct list_head *manfs,
-		      struct list_head *techs)
-{
-	struct turret *gun;
-	struct engine *eng;
-	struct manf *manf;
-	struct tech *tech;
-	unsigned int i;
-
-	memset(ent, 0, sizeof(*ent));
-	/* Count the entities, to size the arrays */
-	list_for_each_entry(gun, guns)
-		ent->ngun++;
-	list_for_each_entry(eng, engines)
-		ent->neng++;
-	list_for_each_entry(manf, manfs)
-		ent->nmanf++;
-	list_for_each_entry(tech, techs)
-		ent->ntech++;
-	/* Allocate the arrays of pointers */
-	ent->gun = calloc(ent->ngun, sizeof(gun));
-	if (!ent->gun)
-		return -errno;
-	ent->eng = calloc(ent->neng, sizeof(eng));
-	if (!ent->eng)
-		return -errno;
-	ent->manf = calloc(ent->nmanf, sizeof(manf));
-	if (!ent->manf)
-		return -errno;
-	ent->tech = calloc(ent->ntech, sizeof(tech));
-	if (!ent->tech)
-		return -errno;
-	/* Fill in the arrays */
-	i = 0;
-	list_for_each_entry(gun, guns)
-		ent->gun[i++] = gun;
-	i = 0;
-	list_for_each_entry(eng, engines)
-		ent->eng[i++] = eng;
-	i = 0;
-	list_for_each_entry(manf, manfs)
-		ent->manf[i++] = manf;
-	i = 0;
-	list_for_each_entry(tech, techs)
-		ent->tech[i++] = tech;
-	return 0;
-}
-
 static int enable_cbreak_mode(struct termios *old)
 {
 	struct termios cbreak;
@@ -94,7 +42,7 @@ static const char *describe_ftype(enum fuse_type ft)
 	}
 }
 
-static const char *describe_bbg(enum bb_girth girth)
+const char *describe_bbg(enum bb_girth girth)
 {
 	switch (girth) {
 	case BB_SMALL:
@@ -142,7 +90,6 @@ static char crew_to_letter(enum crewpos c)
 	}
 }
 
-#if 0 /* not used yet */
 static enum crewpos letter_to_crew(char c)
 {
 	switch (c) {
@@ -162,7 +109,6 @@ static enum crewpos letter_to_crew(char c)
 		return CREW_CLASSES;
 	}
 }
-#endif
 
 static void dump_manf(struct bomber *b)
 {
@@ -201,7 +147,7 @@ static void dump_wing_crew(struct bomber *b)
 	char crew[33];
 
 	printf("[W]ing: %u sq ft; aspect ratio %.1f",
-	       b->wing.area, b->wing.ar);
+	       b->wing.area, b->wing.art / 10.0f);
 	j = 0;
 	for (i = 0; i < b->crew.n; i++) {
 		struct crewman *m = b->crew.men + i;
@@ -224,7 +170,7 @@ static void dump_bay_fuse(struct bomber *b)
 static void dump_elec_fuel(struct bomber *b)
 {
 	printf("e[L]ectrics: %s", describe_esl(b->elec.esl));
-	printf("; f[U]el: %.1f hours%s\n", b->tanks.hours,
+	printf("; f[U]el: %.1f hours%s\n", b->tanks.ht / 10.0f,
 	       b->tanks.sst ? ", self-sealing" : "");
 }
 
@@ -262,7 +208,7 @@ static void dump_bomber_calcs(struct bomber *b)
 	printf("Survivability %.1f/%.1f; Reliability %.1f; Serviceability %.1f\n",
 	       b->defn[0], b->defn[1], (1.0f - b->fail) * 100.0f,
 	       b->serv * 100.0f);
-	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.1f))\n",
+	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.2f))\n",
 	       b->roll_pen, b->turn_pen, b->evade_factor, b->vuln, b->tanks.ratio);
 	printf("Cost: %.0f funds\n", b->cost);
 	printf("\t(core %.0f, fuse %.0f, wing %.0f, eng %.0f, gun %.0f, elec %.0f)\n",
@@ -315,8 +261,9 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 
 	printf(">Select engine (0 to cancel) or number\n");
 	for (i = 0; i < ent->neng; i++)
-		printf("[%c] %s %s\n", i + 'A', ent->eng[i]->manu,
-		       ent->eng[i]->name);
+		if (ent->eng[i]->unlocked)
+			printf("[%c] %s %s\n", i + 'A', ent->eng[i]->manu,
+			       ent->eng[i]->name);
 
 	do {
 		c = getchar();
@@ -335,7 +282,7 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 			return 0;
 		}
 		i = c - 'A';
-		if (i < 0 || i >= ent->neng) {
+		if (i < 0 || i >= ent->neng || !ent->eng[i]->unlocked) {
 			putchar('?');
 			continue;
 		}
@@ -377,6 +324,13 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 			putchar('>');
 			return 0;
 		}
+		if (c == 'Z') {
+			for (i = LXN_NOSE; i < LXN_COUNT; i++)
+				b->turrets.typ[i] = NULL;
+			putchar('>');
+			dump_turrets(b);
+			return 0;
+		}
 
 		i = c - '0';
 		if (i >= LXN_NOSE && i < LXN_COUNT && b->turrets.typ[i]) {
@@ -395,6 +349,447 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 		putchar('>');
 		dump_turrets(b);
 		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_uint(unsigned int *res)
+{
+	char buf[80];
+
+	if (!fgets(buf, sizeof(buf), stdin))
+		return -EIO;
+	if (sscanf(buf, "%u", res) == 1)
+		return 0;
+	return -EINVAL;
+}
+
+static int edit_area(struct bomber *b)
+{
+	unsigned int v;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter wing area in sq ft, or 0 to cancel\n");
+	} while (rc);
+	putchar('>');
+	if (v) {
+		b->wing.area = v;
+		dump_wing_crew(b);
+	}
+	return 0;
+}
+
+static int edit_aspect(struct bomber *b)
+{
+	unsigned int v;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter aspect ratio in tenths, or 0 to cancel\n");
+	} while (rc);
+	putchar('>');
+	if (v) {
+		b->wing.art = v;
+		dump_wing_crew(b);
+	}
+	return 0;
+}
+
+static int edit_wing(struct bomber *b)
+{
+	int c;
+
+	printf(">Edit [A]rea or aspect [R]atio (0 to cancel)\n");
+	do {
+		c = getchar();
+		if (c == EOF)
+			return -EIO;
+		switch (c) {
+		case 0:
+			putchar('>');
+			return 0;
+		case 'a':
+		case 'A':
+			putchar('>');
+			return edit_area(b);
+		case 'r':
+		case 'R':
+			putchar('>');
+			return edit_aspect(b);
+		default:
+			putchar('?');
+			break;
+		}
+	} while (1);
+}
+
+static int edit_crew(struct bomber *b, struct tech_numbers *tn)
+{
+	struct crewman *m;
+	enum crewpos pos;
+	bool gun = false;
+	unsigned int i;
+	int c;
+
+	printf(">[PNBWEG] to add crew, number to remove, *num to toggle gunner, or 0 to cancel\n");
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		if (c == 'Z') {
+			b->crew.n = 0;
+			putchar('>');
+			dump_wing_crew(b);
+			return 0;
+		}
+		if (c == '*') {
+			gun = !gun;
+			continue;
+		}
+
+		i = c - '1';
+		if (i < b->crew.n) {
+			m = &b->crew.men[i];
+			if (gun) {
+				if (m->gun || m->pos == CCLASS_B ||
+				    m->pos == CCLASS_W) {
+					m->gun = !m->gun;
+					putchar('>');
+					dump_wing_crew(b);
+					return 0;
+				}
+			} else if (b->crew.n) {
+				for (; ++i < b->crew.n;)
+					b->crew.men[i - 1] = b->crew.men[i];
+				b->crew.n--;
+				putchar('>');
+				dump_wing_crew(b);
+				return 0;
+			}
+		}
+		pos = letter_to_crew(c);
+		if (b->crew.n >= MAX_CREW || pos >= CREW_CLASSES) {
+			putchar('?');
+			continue;
+		}
+		m = &b->crew.men[b->crew.n++];
+		m->pos = pos;
+		m->gun = false;
+		putchar('>');
+		dump_wing_crew(b);
+		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_cap(struct bomber *b)
+{
+	unsigned int v;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter bomb capacity in lb, or 0 to cancel\n");
+	} while (rc);
+	putchar('>');
+	if (v) {
+		b->bay.cap = v;
+		dump_bay_fuse(b);
+	}
+	return 0;
+}
+
+static int edit_bay(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int i;
+	int c;
+
+	printf(">[B]omb capacity or [");
+	for (i = 0; i < BB_COUNT; i++)
+		if (tn->bt[i])
+			putchar("SMC"[i]);
+	printf("] to set girth\n");
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		switch (c) {
+		case 'b':
+		case 'B':
+			putchar('>');
+			return edit_cap(b);
+		case 's':
+		case 'S':
+			i = BB_SMALL;
+			break;
+		case 'm':
+		case 'M':
+			i = BB_MEDIUM;
+			break;
+		case 'c':
+		case 'C':
+			i = BB_COOKIE;
+			break;
+		default:
+			putchar('?');
+			continue;
+		}
+		if (tn->bt[i]) {
+			b->bay.girth = i;
+			putchar('>');
+			dump_bay_fuse(b);
+			return 0;
+		}
+		putchar('?');
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_fuse(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int i;
+	int c;
+
+	printf(">Select fuselage type\n");
+	for (i = 0; i < FT_COUNT; i++)
+		if (i != FT_GEODETIC || b->manf->geo)
+			printf("[%c] %s\n", i + '1', describe_ftype(i));
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		i = c - '1';
+		if (i < 0 || i >= FT_COUNT ||
+		    (i == FT_GEODETIC && !b->manf->geo)) {
+			putchar('?');
+			continue;
+		}
+		b->fuse.typ = i;
+		putchar('>');
+		dump_bay_fuse(b);
+		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_elec(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int i;
+	int c;
+
+	printf(">Select electrics level\n");
+	for (i = 0; i < ESL_COUNT; i++)
+		if (i <= tn->esl)
+			printf("[%c] %s\n", i + '1', describe_esl(i));
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		i = c - '1';
+		if (i < 0 || i >= ESL_COUNT || i > tn->esl) {
+			putchar('?');
+			continue;
+		}
+		b->elec.esl = i;
+		putchar('>');
+		dump_elec_fuel(b);
+		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int v;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter fuel in tenths hours, 1 to toggle self-sealing, or 0 to cancel\n");
+	} while (rc);
+	putchar('>');
+	if (v == 1) {
+		if (b->tanks.sst || tn->sft) {
+			b->tanks.sst = !b->tanks.sst;
+			dump_elec_fuel(b);
+		} else {
+			fprintf(stderr, "Self sealing tanks not developed yet!\n");
+		}
+	} else if (v) {
+		b->tanks.ht = v;
+		dump_elec_fuel(b);
+	}
+	return 0;
+}
+
+static int save_block(struct bomber *b, const struct entities *ent)
+{
+	unsigned int i, j;
+
+	putchar('>');
+	if (b->error)
+		return -EINVAL;
+	putchar('\n');
+	for (i = 0; i < ent->nmanf; i++)
+		if (b->manf == ent->manf[i])
+			printf("M%c", i + '1');
+	printf("TZ");
+	printf("E%d", b->engines.number);
+	for (i = 0; i < ent->neng; i++)
+		if (b->engines.typ == ent->eng[i])
+			printf("E%c", i + 'A');
+	for (i = LXN_NOSE; i < LXN_COUNT; i++)
+		for (j = 0; j < ent->ngun; j++)
+			if (b->turrets.typ[i] == ent->gun[j])
+				printf("T%c", j + 'A');
+	printf("WA%u\nWR%u\n", b->wing.area, b->wing.art);
+	printf("CZ");
+	for (i = 0; i < b->crew.n; i++) {
+		printf("C%c", crew_to_letter(b->crew.men[i].pos));
+		if (b->crew.men[i].gun)
+			printf("C*%c", i + '1');
+	}
+	printf("BB%u\n", b->bay.cap);
+	switch (b->bay.girth) {
+	case BB_SMALL:
+		printf("BS");
+		break;
+	case BB_MEDIUM:
+		printf("BM");
+		break;
+	case BB_COOKIE:
+		printf("BC");
+		break;
+	default:
+		return -EINVAL;
+	}
+	printf("F%c", b->fuse.typ + '1');
+	printf("L%c", b->elec.esl + '1');
+	printf("U%u\n", b->tanks.ht);
+	if (b->tanks.sst)
+		printf("U1\n");
+	return 0;
+}
+
+static int edit_techyear(struct tech_numbers *tn, const struct entities *ent)
+{
+	unsigned int v, i;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter year to set tech for, or 0 to cancel\n");
+	} while (rc);
+	putchar('>');
+	if (v) {
+		for (i = 0; i < ent->ntech; i++)
+			ent->tech[i]->unlocked = ent->tech[i]->year <= v;
+		return apply_techs(ent, tn);
+	}
+	return 0;
+}
+
+static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
+{
+	unsigned int i, j;
+	struct tech *t;
+	int c;
+
+	printf(">Select tech to toggle, @ for year, or 0 to cancel\n");
+	for (i = 0; i < ent->ntech; i++) {
+		char l, s;
+
+		t = ent->tech[i];
+		if (!t->year) {
+			j = i + 1;
+			continue;
+		}
+		if (!t->have_reqs && !t->unlocked)
+			continue;
+		if (i - j < 26)
+			l = (i - j) + 'A';
+		else
+			l = (i - j - 26) + 'a';
+		s = ' ';
+		if (t->unlocked) {
+			if (t->have_reqs)
+				s = '*';
+			else
+				s = '!';
+		}
+		printf("[%c] %c %s (%d)\n", l, s, t->name, t->year);
+	}
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+		if (c == '@')
+			return edit_techyear(tn, ent);
+
+		i = c - 'A';
+		if (i >= 0 && i < 26) {
+			t = ent->tech[i + j];
+		} else {
+			i = c - 'a';
+			if (i < 0 || i + j + 26 >= ent->ntech) {
+				putchar('?');
+				continue;
+			}
+			t = ent->tech[i + j + 26];
+		}
+		t->unlocked = !t->unlocked;
+		putchar('>');
+		return apply_techs(ent, tn);
 	} while (1);
 
 	return -EIO;
@@ -454,6 +849,38 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 't':
 		case 'T':
 			rc = edit_guns(b, tn, ent);
+			break;
+		case 'w':
+		case 'W':
+			rc = edit_wing(b);
+			break;
+		case 'c':
+		case 'C':
+			rc = edit_crew(b, tn);
+			break;
+		case 'b':
+		case 'B':
+			rc = edit_bay(b, tn);
+			break;
+		case 'f':
+		case 'F':
+			rc = edit_fuse(b, tn);
+			break;
+		case 'l':
+		case 'L':
+			rc = edit_elec(b, tn);
+			break;
+		case 'u':
+		case 'U':
+			rc = edit_tanks(b, tn);
+			break;
+		case 's':
+		case 'S':
+			rc = save_block(b, ent);
+			break;
+		case 'r':
+		case 'R':
+			rc = edit_tech(tn, ent);
 			break;
 		default:
 			putchar('?');

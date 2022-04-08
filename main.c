@@ -31,7 +31,7 @@ void empty_techs(struct list_head *techs)
 	struct tech *tech;
 
 	list_for_each_entry(tech, techs)
-		tech->unlocked = !tech->year && !tech->inter;
+		tech->unlocked = !tech->year;
 }
 
 int main(void)
@@ -75,10 +75,16 @@ int main(void)
 	}
 	fprintf(stderr, "Loaded %d techs\n", rc);
 
+	rc = populate_entities(&entities, &guns, &engines, &manfs, &techs);
+	if (rc < 0) {
+		error("Failed to create entity arrays", rc);
+		return 1;
+	}
+
 	empty_guns(&guns);
 	empty_engines(&engines);
 	empty_techs(&techs);
-	rc = apply_techs(&techs, &tn);
+	rc = apply_techs(&entities, &tn);
 	if (rc < 0) {
 		error("Failed to init techs", rc);
 		return 1;
@@ -93,13 +99,6 @@ int main(void)
 		return 1;
 	}
 	fprintf(stderr, "Prepared blank bomber\n");
-
-	rc = populate_entities(&entities, &guns, &engines, &manfs, &techs);
-	if (rc < 0) {
-		error("Failed to create entity arrays", rc);
-		return 1;
-	}
-	fprintf(stderr, "Initialised editor\n");
 
 	edit_loop(&b, &tn, &entities);
 

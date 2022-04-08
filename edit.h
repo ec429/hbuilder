@@ -1,19 +1,9 @@
-#include "calc.h"
-
 #ifndef _EDIT_H
 #define _EDIT_H
 
-struct entities {
-	unsigned int ngun, neng, nmanf, ntech;
-	struct turret **gun;
-	struct engine **eng;
-	struct manf **manf;
-	struct tech **tech;
-};
+#include "calc.h"
 
-int populate_entities(struct entities *ent, struct list_head *guns,
-		      struct list_head *engines, struct list_head *manfs,
-		      struct list_head *techs);
+const char *describe_bbg(enum bb_girth girth);
 
 int edit_loop(struct bomber *b, struct tech_numbers *tn,
 	      const struct entities *ent);

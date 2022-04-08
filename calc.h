@@ -1,8 +1,8 @@
-#include <stdbool.h>
-#include "data.h"
-
 #ifndef _CALC_H
 #define _CALC_H
+
+#include <stdbool.h>
+#include "data.h"
 
 struct engines {
 	/* Inputs */
@@ -67,12 +67,15 @@ struct crewman {
 	bool gun;
 };
 
+#define MAX_CREW	16
+
 struct crew {
 	/* Inputs */
 	unsigned int n;
-	struct crewman men[16];
+	struct crewman men[MAX_CREW];
 	/* Output cache */
 	unsigned int gunners;
+	bool pilot, nav;
 	float tare;
 	float gross;
 	float dc;
@@ -106,6 +109,8 @@ enum elec_level {
 	ESL_LOW,
 	ESL_HIGH,
 	ESL_STABLE,
+
+	ESL_COUNT
 };
 
 struct electrics {

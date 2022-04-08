@@ -3,6 +3,7 @@
 #include <math.h>
 #include <errno.h>
 #include "calc.h"
+#include "edit.h"
 
 #define min(a, b)	((a) < (b) ? (a) : (b))
 #define max(a, b)	((a) < (b) ? (b) : (a))
@@ -29,6 +30,10 @@ static int calc_engines(struct bomber *b, struct tech_numbers *tn)
 	float ees = 1, eet = 1, eec = 1;
 	float mounts = 0;
 
+	if (!e->typ->unlocked) {
+		fprintf(stderr, "%s not developed yet!\n", e->typ->name);
+		b->error = true;
+	}
 	e->odd = e->number & 1;
 	e->manumatch = b->manf->eman && !strcmp(e->typ->manu, b->manf->eman);
 	if (e->egg) {
@@ -105,12 +110,16 @@ static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
 
 		if (!g)
 			continue;
+		if (!g->unlocked) {
+			fprintf(stderr, "%s not developed yet!\n", g->name);
+			b->error = true;
+		}
 		t->need_gunners++;
 		t->drag += g->drg * tn->gdf;
 		tare = g->twt * tn->gtf / 100.0f;
 		t->tare += tare;
 		t->ammo += g->gun * tn->gam;
-		t->serv *= 1.0f - g->srv / 100.0f;
+		t->serv *= 1.0f - g->srv / 1000.0f;
 		t->cost += 3.0f * tare + g->gun * tn->gcf / 10.0f + g->gun * tn->gac / 10.0f;
 		for (j = 0; j < GC_COUNT; j++)
 			t->gc[j] += g->gc[j] / 10.0f;
@@ -147,7 +156,7 @@ static int calc_wing(struct bomber *b, struct tech_numbers *tn)
 	arpen = sqrt(max(w->ar, b->manf->wap)) / 6.0f;
 	w->tare = powf(w->span, tn->wts / 100.0f) *
 		  powf(w->chord, tn->wtc / 100.0f) *
-		  (tn->wtf / 100.0f);
+		  (tn->wtf / 100.0f) * arpen;
 	arpen = max(w->ar, 6.0f) / 6.0f;
 	epen = b->engines.number > 3 ? b->manf->wc4 / 100.0f : 1.0f;
 	w->cost = powf(w->tare, b->manf->wcp / 100.0f) *
@@ -157,22 +166,60 @@ static int calc_wing(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
+const char *crew_name(enum crewpos c)
+{
+	switch (c) {
+	case CCLASS_P:
+		return "Pilot";
+	case CCLASS_N:
+		return "Navigator";
+	case CCLASS_B:
+		return "Bomb-aimer";
+	case CCLASS_W:
+		return "Wireless-op";
+	case CCLASS_E:
+		return "Engineer";
+	case CCLASS_G:
+		return "Gunner";
+	default:
+		return "Unknown crew";
+	}
+}
+
 static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 {
 	struct crew *c = &b->crew;
 	unsigned int i;
 
 	c->gunners = 0;
+	c->pilot = c->nav = false;
 	c->dc = 0;
 	for (i = 0; i < c->n; i++) {
 		struct crewman *m = c->men + i;
 
+		if (m->gun && m->pos != CCLASS_B && m->pos != CCLASS_W) {
+			fprintf(stderr, "%s cannot dual-role!\n",
+				crew_name(m->pos));
+			b->error = true;
+		}
+		if (m->pos == CCLASS_P)
+			c->pilot = true;
+		if (m->pos == CCLASS_N)
+			c->nav = true;
 		if (m->pos == CCLASS_G || m->gun)
 			c->gunners++;
 		if (m->pos == CCLASS_E)
 			c->dc += m->gun ? 0.75f : 1.0f;
 		if (m->pos == CCLASS_W)
 			c->dc += m->gun ? 0.45f : 0.6f;
+	}
+	if (!c->pilot) {
+		fprintf(stderr, "Crew must include a pilot!\n");
+		b->error = true;
+	}
+	if (!c->nav) {
+		fprintf(stderr, "Crew must include a navigator!\n");
+		b->error = true;
 	}
 	c->tare = c->n * tn->cmi;
 	c->gross = c->n * 168;
@@ -194,6 +241,11 @@ static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
 		fprintf(stderr, "Nonexistent bombbay girth!\n");
 		b->error = true;
 		return -EINVAL;
+	}
+	if (!tn->bt[a->girth]) {
+		fprintf(stderr, "%s not developed yet!\n",
+			describe_bbg(a->girth));
+		b->error = true;
 	}
 	a->factor = (tn->bt[a->girth] / 1000.0f) *
 		    (b->manf->bt[a->girth] / 100.0f);
@@ -379,10 +431,10 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 	b->drag = b->wing.drag + b->fuse.drag + b->engines.drag +
 		  b->turrets.drag;
 	b->takeoff_spd = wing_minv(&b->wing, b->gross, 0.0f) * 1.6f;
-	if (b->takeoff_spd > 132.0f) {
+	if (b->takeoff_spd > 120.0f) {
 		fprintf(stderr, "Take-off speed is dangerously high!\n");
 		b->error = true;
-	} else if (b->takeoff_spd > 120.0f) {
+	} else if (b->takeoff_spd > 110.0f) {
 		fprintf(stderr, "Take-off speed is worryingly high.\n");
 		b->warning = true;
 	}
@@ -424,7 +476,8 @@ static int calc_rely(struct bomber *b, struct tech_numbers *tn)
 
 static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 {
-	unsigned int schrage;
+	unsigned int sch;
+	float sgf;
 
 	b->roll_pen = sqrt(b->wing.ar);
 	b->turn_pen = sqrt(max(b->wing.wl - b->manf->tpl, 0.0f));
@@ -437,13 +490,13 @@ static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 		  b->tanks.vuln;
 	b->flak_factor = b->vuln * 3.0f *
 			 sqrt(max(30.0f - b->ceiling, 3.0f));
-	for (schrage = 0; schrage < 2; schrage++) {
-		b->fight_factor[schrage] = powf(b->evade_factor, 0.7f) *
-					   (b->vuln * 4.0f +
-					    b->turrets.rate[schrage]) /
-					   3.0f;
-		b->defn[schrage] = b->fight_factor[schrage] +
-				   b->flak_factor;
+	sgf = (b->turrets.need_gunners + 1.0f) / (b->crew.gunners + 1.0f);
+	for (sch = 0; sch < 2; sch++) {
+		b->fight_factor[sch] = powf(b->evade_factor, 0.7f) *
+				       (b->vuln * 4.0f +
+					b->turrets.rate[sch] * sgf) /
+				       3.0f;
+		b->defn[sch] = b->fight_factor[sch] + b->flak_factor;
 	}
 	return 0;
 }
@@ -473,6 +526,10 @@ static int calc_dev(struct bomber *b, struct tech_numbers *tn)
 int calc_bomber(struct bomber *b, struct tech_numbers *tn)
 {
 	int rc;
+
+	/* clear old errors and warnings */
+	b->error = false;
+	b->warning = false;
 
 	rc = calc_engines(b, tn);
 	if (rc)

@@ -385,7 +385,6 @@ static int load_tech_word(const char *key, const char *value, void *data)
 	struct tech_loader *loader = data;
 
 	INT_KEY(loader->tech, "y", year);
-	INT_KEY(loader->tech, "i", inter);
 	INT_KEY(loader->tech, "G4T", num.g4t);
 	INT_KEY(loader->tech, "G4C", num.g4c);
 	INT_KEY(loader->tech, "CMI", num.cmi);
@@ -572,14 +571,81 @@ int free_techs(struct list_head *head)
 	return 0;
 }
 
-int apply_techs(struct list_head *techs, struct tech_numbers *tn)
+/* While lists were handy for loading the data, in the editor we'd rather
+ * have an array that we can quickly index into.
+ */
+int populate_entities(struct entities *ent, struct list_head *guns,
+		      struct list_head *engines, struct list_head *manfs,
+		      struct list_head *techs)
+{
+	struct turret *gun;
+	struct engine *eng;
+	struct manf *manf;
+	struct tech *tech;
+	unsigned int i;
+
+	memset(ent, 0, sizeof(*ent));
+	/* Count the entities, to size the arrays */
+	list_for_each_entry(gun, guns)
+		ent->ngun++;
+	list_for_each_entry(eng, engines)
+		ent->neng++;
+	list_for_each_entry(manf, manfs)
+		ent->nmanf++;
+	list_for_each_entry(tech, techs)
+		ent->ntech++;
+	/* Allocate the arrays of pointers */
+	ent->gun = calloc(ent->ngun, sizeof(gun));
+	if (!ent->gun)
+		return -errno;
+	ent->eng = calloc(ent->neng, sizeof(eng));
+	if (!ent->eng)
+		return -errno;
+	ent->manf = calloc(ent->nmanf, sizeof(manf));
+	if (!ent->manf)
+		return -errno;
+	ent->tech = calloc(ent->ntech, sizeof(tech));
+	if (!ent->tech)
+		return -errno;
+	/* Fill in the arrays */
+	i = 0;
+	list_for_each_entry(gun, guns)
+		ent->gun[i++] = gun;
+	i = 0;
+	list_for_each_entry(eng, engines)
+		ent->eng[i++] = eng;
+	i = 0;
+	list_for_each_entry(manf, manfs)
+		ent->manf[i++] = manf;
+	i = 0;
+	list_for_each_entry(tech, techs)
+		ent->tech[i++] = tech;
+	return 0;
+}
+
+int apply_techs(const struct entities *ent, struct tech_numbers *tn)
 {
 	struct tech *tech;
+	unsigned int j;
 
+	for (j = 0; j < ent->neng; j++)
+		ent->eng[j]->unlocked = false;
+	for (j = 0; j < ent->ngun; j++)
+		ent->gun[j]->unlocked = false;
+	for (j = 0; j < ent->ntech; j++) {
+		unsigned int i;
+
+		tech = ent->tech[j];
+		tech->have_reqs = true;
+		for (i = 0; i < ARRAY_SIZE(tech->req); i++)
+			if (tech->req[i] && !tech->req[i]->unlocked)
+				tech->have_reqs = false;
+	}
 	memset(tn, 0, sizeof(*tn));
-	list_for_each_entry(tech, techs) {
+	for (j = 0; j < ent->ntech; j++) {
 		unsigned int *p, *q, i;
 
+		tech = ent->tech[j];
 		if (!tech->unlocked)
 			continue;
 		p = (unsigned int *)&tech->num;
