@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <math.h>
 #include <errno.h>
@@ -15,7 +16,7 @@ void init_bomber(struct bomber *b, struct manf *m, struct engine *e)
 	b->manf = m;
 	b->engines.number = 1;
 	b->engines.typ = e;
-	b->wing.area = 200;
+	b->wing.area = 240;
 	b->wing.art = 70;
 	b->crew.n = 2;
 	b->crew.men[0] = (struct crewman){.pos = CCLASS_P};
@@ -24,23 +25,39 @@ void init_bomber(struct bomber *b, struct manf *m, struct engine *e)
 	b->tanks.ht = 60;
 }
 
+static void design_error(struct bomber *b, const char *format, ...)
+{
+	va_list ap;
+
+	b->error = true;
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+}
+
+static void design_warning(struct bomber *b, const char *format, ...)
+{
+	va_list ap;
+
+	b->warning = true;
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+}
+
 static int calc_engines(struct bomber *b, struct tech_numbers *tn)
 {
 	struct engines *e = &b->engines;
 	float ees = 1, eet = 1, eec = 1;
 	float mounts = 0;
 
-	if (!e->typ->unlocked) {
-		fprintf(stderr, "%s not developed yet!\n", e->typ->name);
-		b->error = true;
-	}
+	if (!e->typ->unlocked)
+		design_error(b, "%s not developed yet!\n", e->typ->name);
 	e->odd = e->number & 1;
 	e->manumatch = b->manf->eman && !strcmp(e->typ->manu, b->manf->eman);
 	if (e->egg) {
-		if (!tn->ees || !tn->eet || !tn->eec) {
-			fprintf(stderr, "Power Egg mounts not developed yet!\n");
-			b->error = true;
-		}
+		if (!tn->ees || !tn->eet || !tn->eec)
+			design_error(b, "Power Egg mounts not developed yet!\n");
 		ees = tn->ees / 100.0f;
 		eet = tn->eet / 100.0f;
 		eec = tn->eec / 100.0f;
@@ -59,10 +76,8 @@ static int calc_engines(struct bomber *b, struct tech_numbers *tn)
 	e->cost = e->number * e->typ->cos * eec * (1.0f + 0.5f * tn->emc / 100.0f);
 	if (e->number > 3) {
 		e->cost *= tn->g4c / 100.0f;
-		if (!tn->g4c || !tn->g4t) {
-			fprintf(stderr, "Four-engined bombers not developed yet!\n");
-			b->error = true;
-		}
+		if (!tn->g4c || !tn->g4t)
+			design_error(b, "Four-engined bombers not developed yet!\n");
 	}
 	e->scl = e->typ->scl;
 	e->fuelrate = e->number * e->typ->bhp * 0.36f;
@@ -98,10 +113,8 @@ static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
 	t->ammo = 0;
 	t->serv = 1.0f;
 	t->cost = 0;
-	if (t->typ[LXN_NOSE] && b->engines.odd) {
-		fprintf(stderr, "Turret in nose position conflicts with engine!\n");
-		b->error = true;
-	}
+	if (t->typ[LXN_NOSE] && b->engines.odd)
+		design_error(b, "Turret in nose position conflicts with engine!\n");
 	for (j = 0; j < GC_COUNT; j++)
 		t->gc[j] = 0;
 	for (i = LXN_NOSE; i < LXN_COUNT; i++) {
@@ -110,14 +123,11 @@ static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
 
 		if (!g)
 			continue;
-		if (!g->unlocked) {
-			fprintf(stderr, "%s not developed yet!\n", g->name);
-			b->error = true;
-		}
-		if (g->slb && b->fuse.typ != FT_SLABBY) {
-			fprintf(stderr, "%s requires slab-sided fuselage!\n", g->name);
-			b->error = true;
-		}
+		if (!g->unlocked)
+			design_error(b, "%s not developed yet!\n", g->name);
+		if (g->slb && b->fuse.typ != FT_SLABBY)
+			design_error(b, "%s requires slab-sided fuselage!\n",
+				     g->name);
 		t->need_gunners++;
 		t->drag += g->drg * tn->gdf;
 		tare = g->twt * tn->gtf / 100.0f;
@@ -148,8 +158,7 @@ static int calc_wing(struct bomber *b, struct tech_numbers *tn)
 	w->ar = w->art / 10.0f;
 	/* Make sure there's no risk of calculations blowing up */
 	if (w->ar < 1.0) {
-		fprintf(stderr, "Wing aspect ratio too low!\n");
-		b->error = true;
+		design_error(b, "Wing aspect ratio too low!\n");
 		return -EINVAL;
 	}
 	w->span = sqrt(w->area * w->ar);
@@ -201,11 +210,9 @@ static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 	for (i = 0; i < c->n; i++) {
 		struct crewman *m = c->men + i;
 
-		if (m->gun && m->pos != CCLASS_B && m->pos != CCLASS_W) {
-			fprintf(stderr, "%s cannot dual-role!\n",
-				crew_name(m->pos));
-			b->error = true;
-		}
+		if (m->gun && m->pos != CCLASS_B && m->pos != CCLASS_W)
+			design_error(b, "%s cannot dual-role!\n",
+				     crew_name(m->pos));
 		if (m->pos == CCLASS_P)
 			c->pilot = true;
 		if (m->pos == CCLASS_N)
@@ -217,20 +224,14 @@ static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 		if (m->pos == CCLASS_W)
 			c->dc += m->gun ? 0.45f : 0.6f;
 	}
-	if (!c->pilot) {
-		fprintf(stderr, "Crew must include a pilot!\n");
-		b->error = true;
-	}
-	if (!c->nav) {
-		fprintf(stderr, "Crew must include a navigator!\n");
-		b->error = true;
-	}
+	if (!c->pilot)
+		design_error(b, "Crew must include a pilot!\n");
+	if (!c->nav)
+		design_error(b, "Crew must include a navigator!\n");
 	c->tare = c->n * tn->cmi;
 	c->gross = c->n * 168;
-	if (c->gunners < b->turrets.need_gunners) {
-		fprintf(stderr, "Fewer gunners than turrets, defence will be weakened.\n");
-		b->warning = true;
-	}
+	if (c->gunners < b->turrets.need_gunners)
+		design_warning(b, "Fewer gunners than turrets, defence will be weakened.\n");
 	c->cct = c->tare * (tn->ccc / 100.0f - 1.0f);
 	c->es = tn->ces / 100.0f;
 	return 0;
@@ -242,15 +243,12 @@ static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
 	struct bombbay *a = &b->bay;
 
 	if (a->girth < 0 || a->girth >= BB_COUNT) { /* can't happen */
-		fprintf(stderr, "Nonexistent bombbay girth!\n");
-		b->error = true;
+		design_error(b, "Nonexistent bombbay girth!\n");
 		return -EINVAL;
 	}
-	if (!tn->bt[a->girth]) {
-		fprintf(stderr, "%s not developed yet!\n",
-			describe_bbg(a->girth));
-		b->error = true;
-	}
+	if (!tn->bt[a->girth])
+		design_error(b, "Bay for %s not developed yet!\n",
+			     describe_bbg(a->girth));
 	a->factor = (tn->bt[a->girth] / 1000.0f) *
 		    (b->manf->bt[a->girth] / 100.0f);
 	if (a->cap > bbb)
@@ -271,14 +269,11 @@ static int calc_fuselage(struct bomber *b, struct tech_numbers *tn)
 	b->core_tare = (b->turrets.tare + b->crew.tare + b->bay.tare) *
 		       b->manf->act / 100.0f;
 	if (f->typ < 0 || f->typ >= FT_COUNT) { /* can't happen */
-		fprintf(stderr, "Nonexistent fuselage type!\n");
-		b->error = true;
+		design_error(b, "Nonexistent fuselage type!\n");
 		return -EINVAL;
 	}
-	if (f->typ == FT_GEODETIC && !b->manf->geo) {
-		fprintf(stderr, "This manufacturer cannot design geodetics!\n");
-		b->error = true;
-	}
+	if (f->typ == FT_GEODETIC && !b->manf->geo)
+		design_error(b, "This manufacturer cannot design geodetics!\n");
 	f->tare = b->core_tare * (tn->ft[f->typ] / 100.0f) *
 		  b->manf->ft[f->typ] / 100.0f;
 	f->serv = tn->fs[f->typ] / 1000.0f;
@@ -294,11 +289,9 @@ static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 {
 	struct electrics *e = &b->elec;
 
-	if (e->esl > tn->esl) {
-		fprintf(stderr, "Electrics %s not developed yet!\n",
-			describe_esl(e->esl));
-		b->error = true;
-	}
+	if (e->esl > tn->esl)
+		design_error(b, "Electrics %s not developed yet!\n",
+			     describe_esl(e->esl));
 	/* This is all hard-coded; datafiles / techlevels don't get to
 	 * change these coefficients.
 	 */
@@ -314,8 +307,7 @@ static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 			  500.0f / max(b->engines.number, 1);
 		break;
 	default: /* can't happen */
-		fprintf(stderr, "Nonexistent electric supply level!\n");
-		b->error = true;
+		design_error(b, "Nonexistent electric supply level!\n");
 		return -EINVAL;
 	}
 	return 0;
@@ -330,16 +322,12 @@ static int calc_tanks(struct bomber *b, struct tech_numbers *tn)
 	t->tare = t->mass * (tn->fut / 1000.0f);
 	t->cost = t->tare * (tn->fuc / 100.0f);
 	t->ratio = t->mass / max(b->wing.tare, 1.0f);
-	if (t->ratio > (t->sst ? 2.5f : 2.0f)) {
-		fprintf(stderr, "Wing is crammed with fuel, vulnerability high.\n");
-		b->warning = true;
-	}
+	if (t->ratio > (t->sst ? 2.5f : 2.0f))
+		design_warning(b, "Wing is crammed with fuel, vulnerability high.\n");
 	t->vuln = t->ratio * tn->fuv / 400.0f;
 	if (t->sst) {
-		if (!tn->sft || !tn->sfc || !tn->sfv) {
-			fprintf(stderr, "Self sealing tanks not developed yet!\n");
-			b->error = true;
-		}
+		if (!tn->sft || !tn->sfc || !tn->sfv)
+			design_error(b, "Self sealing tanks not developed yet!\n");
 		t->tare *= tn->sft / 100.0f;
 		t->cost *= tn->sfc / 100.0f; /* note ignores SFT */
 		t->vuln *= tn->sfv / 100.0f;
@@ -450,13 +438,10 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 	b->drag = b->wing.drag + b->fuse.drag + b->engines.drag +
 		  b->turrets.drag;
 	b->takeoff_spd = wing_minv(&b->wing, b->gross, 0.0f) * 1.6f;
-	if (b->takeoff_spd > 120.0f) {
-		fprintf(stderr, "Take-off speed is dangerously high!\n");
-		b->error = true;
-	} else if (b->takeoff_spd > 110.0f) {
-		fprintf(stderr, "Take-off speed is worryingly high.\n");
-		b->warning = true;
-	}
+	if (b->takeoff_spd > 120.0f)
+		design_error(b, "Take-off speed is dangerously high!\n");
+	else if (b->takeoff_spd > 110.0f)
+		design_warning(b, "Take-off speed is worryingly high.\n");
 	rc = calc_ceiling(b, tn);
 	if (rc)
 		return rc;
@@ -464,23 +449,17 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 			max(b->ceiling - 10.0f, 0) / 2.0f;
 	b->cruise_spd = airspeed(b, b->cruise_alt);
 	b->init_climb = climb_rate(b, 0.0f);
-	if (b->init_climb < 400.0f) {
-		fprintf(stderr, "Design can barely take off!\n");
-		b->error = true;
-	} else if (b->init_climb < 640.0f) {
-		fprintf(stderr, "Climb rate is very slow.\n");
-		b->warning = true;
-	}
+	if (b->init_climb < 400.0f)
+		design_error(b, "Design can barely take off!\n");
+	else if (b->init_climb < 640.0f)
+		design_warning(b, "Climb rate is very slow.\n");
 	b->deck_spd = airspeed(b, 0.0f);
 	b->ferry = b->tanks.hours * b->cruise_spd;
 	b->range = max(b->ferry * 0.6f - 150.0f, 0.0f);
-	if (b->range < 300.0f) {
-		fprintf(stderr, "Range is far too low!\n");
-		b->error = true;
-	} else if (b->range < 500.0f) {
-		fprintf(stderr, "Range is on the low side.\n");
-		b->warning = true;
-	}
+	if (b->range < 300.0f)
+		design_error(b, "Range is far too low!\n");
+	else if (b->range < 500.0f)
+		design_warning(b, "Range is on the low side.\n");
 	return 0;
 }
 
