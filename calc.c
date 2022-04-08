@@ -496,7 +496,9 @@ static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 		  b->tanks.vuln;
 	b->flak_factor = b->vuln * 3.0f *
 			 sqrt(max(30.0f - b->ceiling, 3.0f));
-	sgf = (b->turrets.need_gunners + 1.0f) / (b->crew.gunners + 1.0f);
+	/* Looks backwards?  Lower is better for gunrate */
+	sgf = max((b->turrets.need_gunners + 1.0f) / (b->crew.gunners + 1.0f),
+		  1.0f);
 	for (sch = 0; sch < 2; sch++) {
 		b->fight_factor[sch] = powf(b->evade_factor, 0.7f) *
 				       (b->vuln * 4.0f +
