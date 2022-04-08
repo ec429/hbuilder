@@ -185,8 +185,16 @@ static void dump_bomber_info(struct bomber *b)
 
 	if (b->error)
 		printf("Design contains errors!  Please review [X].\n");
-	else if (b->warning)
+	else if (b->new)
 		printf("Design contains warnings!  Consider reviewing [X].\n");
+}
+
+static void dump_bomber_ew(struct bomber *b)
+{
+	unsigned int i;
+
+	for (i = 0; i < b->new; i++)
+		printf(b->ew[i]);
 }
 
 static void dump_bomber_calcs(struct bomber *b)
@@ -218,6 +226,7 @@ static void dump_bomber_calcs(struct bomber *b)
 	       b->tproto, b->cproto);
 	printf("Production in %.0f days for %.0f funds\n",
 	       b->tprod, b->cprod);
+	dump_bomber_ew(b);
 }
 
 static int edit_manf(struct bomber *b, struct tech_numbers *tn,
@@ -896,11 +905,11 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 			break;
 		case 'x':
 		case 'X':
-			/* Just a way to redisplay errors/warnings */
+			/* Redisplay errors/warnings */
 			putchar('>');
 			putchar('\n');
-			rc = 0;
-			break;
+			dump_bomber_ew(b);
+			continue;
 		default:
 			putchar('?');
 			continue;

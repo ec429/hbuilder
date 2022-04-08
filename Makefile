@@ -11,4 +11,6 @@ hbuilder: main.o $(OBJS)
 
 calc.o: data.h
 
+edit.o: calc.h data.h
+
 main.o: $(OBJS:.o=.h) list.h

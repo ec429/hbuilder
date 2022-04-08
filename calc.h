@@ -133,6 +133,8 @@ struct tanks {
 	float vuln;
 };
 
+#define MAX_EW	16
+#define EW_LEN	80
 struct bomber {
 	/* Inputs */
 	struct manf *manf;
@@ -145,7 +147,9 @@ struct bomber {
 	struct electrics elec;
 	struct tanks tanks;
 	/* Output cache */
-	bool error, warning;
+	bool error;
+	unsigned int new;
+	char ew[MAX_EW][EW_LEN];
 	float serv;
 	float fail;
 	float core_tare;

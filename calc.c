@@ -29,20 +29,28 @@ static void design_error(struct bomber *b, const char *format, ...)
 {
 	va_list ap;
 
+	/* If this is the only error, make sure to include it even if
+	 * that means overwriting one of the existing warnings.
+	 */
+	if (b->new < MAX_EW || !b->error) {
+		if (b->new < MAX_EW)
+			b->new++;
+		va_start(ap, format);
+		vsnprintf(b->ew[b->new - 1], EW_LEN, format, ap);
+		va_end(ap);
+	}
 	b->error = true;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
 }
 
 static void design_warning(struct bomber *b, const char *format, ...)
 {
 	va_list ap;
 
-	b->warning = true;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+	if (b->new < MAX_EW) {
+		va_start(ap, format);
+		vsnprintf(b->ew[b->new++], EW_LEN, format, ap);
+		va_end(ap);
+	}
 }
 
 static int calc_engines(struct bomber *b, struct tech_numbers *tn)
@@ -527,7 +535,7 @@ int calc_bomber(struct bomber *b, struct tech_numbers *tn)
 
 	/* clear old errors and warnings */
 	b->error = false;
-	b->warning = false;
+	b->new = 0;
 
 	rc = calc_engines(b, tn);
 	if (rc)
