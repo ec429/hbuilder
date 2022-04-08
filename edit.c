@@ -184,16 +184,16 @@ static void dump_bomber_info(struct bomber *b)
 	dump_elec_fuel(b);
 
 	if (b->error)
-		printf("Design contains errors!  Please review.\n");
+		printf("Design contains errors!  Please review [X].\n");
 	else if (b->warning)
-		printf("Design contains warnings!  Consider reviewing.\n");
+		printf("Design contains warnings!  Consider reviewing [X].\n");
 }
 
 static void dump_bomber_calcs(struct bomber *b)
 {
 	printf("Dimensions: span %.1fft, chord %.1fft\n",
 	       b->wing.span, b->wing.chord);
-	printf("Weights: tare %.0flb, gross %.0flb; wing loading %.1flb/sq ft\n", b->tare, b->gross, b->wing.wl);
+	printf("Weights: tare %.0flb, gross %.0flb; wing loading %.1flb/sq ft, L/D %.1f\n", b->tare, b->gross, b->wing.wl, b->wing.ld);
 	printf("\t(core %.0flb, fuse %.0flb, wing %.0flb, eng %.0flb, tanks %.0flb)\n",
 	       b->core_tare, b->fuse.tare, b->wing.tare, b->engines.tare,
 	       b->tanks.tare);
@@ -299,6 +299,8 @@ static bool gun_conflict(const struct bomber *b, const struct turret *t)
 {
 	if (t->lxn == LXN_NOSE && b->engines.odd)
 		return true;
+	if (t->slb && b->fuse.typ != FT_SLABBY)
+		return true;
 	return b->turrets.typ[t->lxn] != NULL;
 }
 
@@ -358,6 +360,7 @@ static int edit_uint(unsigned int *res)
 {
 	char buf[80];
 
+	putchar('>');
 	if (!fgets(buf, sizeof(buf), stdin))
 		return -EIO;
 	if (sscanf(buf, "%u", res) == 1)
@@ -415,16 +418,14 @@ static int edit_wing(struct bomber *b)
 		if (c == EOF)
 			return -EIO;
 		switch (c) {
-		case 0:
+		case '0':
 			putchar('>');
 			return 0;
 		case 'a':
 		case 'A':
-			putchar('>');
 			return edit_area(b);
 		case 'r':
 		case 'R':
-			putchar('>');
 			return edit_aspect(b);
 		default:
 			putchar('?');
@@ -540,7 +541,6 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 		switch (c) {
 		case 'b':
 		case 'B':
-			putchar('>');
 			return edit_cap(b);
 		case 's':
 		case 'S':
@@ -647,24 +647,35 @@ static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
 		if (rc == -EIO)
 			return rc;
 		if (rc)
-			printf("Enter fuel in tenths hours, 1 to toggle self-sealing, or 0 to cancel\n");
+			printf("Enter fuel in tenths hours, 1 or 2 to dis/enable self-sealing, or 0 to cancel\n");
 	} while (rc);
-	putchar('>');
 	if (v == 1) {
-		if (b->tanks.sst || tn->sft) {
-			b->tanks.sst = !b->tanks.sst;
+		b->tanks.sst = false;
+		putchar('>');
+		dump_elec_fuel(b);
+		return 0;
+	}
+	if (v == 2) {
+		if (b->tanks.sst)
+			return 0;
+		if (tn->sft) {
+			b->tanks.sst = true;
+			putchar('>');
 			dump_elec_fuel(b);
-		} else {
-			fprintf(stderr, "Self sealing tanks not developed yet!\n");
+			return 0;
 		}
-	} else if (v) {
+		fprintf(stderr, "Self sealing tanks not developed yet!\n");
+		return -EINVAL;
+	}
+	if (v) {
 		b->tanks.ht = v;
+		putchar('>');
 		dump_elec_fuel(b);
 	}
 	return 0;
 }
 
-static int save_block(struct bomber *b, const struct entities *ent)
+static int dump_block(struct bomber *b, const struct entities *ent)
 {
 	unsigned int i, j;
 
@@ -676,6 +687,8 @@ static int save_block(struct bomber *b, const struct entities *ent)
 		if (b->manf == ent->manf[i])
 			printf("M%c", i + '1');
 	printf("TZ");
+	printf("F%c", b->fuse.typ + '1');
+	printf("L%c", b->elec.esl + '1');
 	printf("E%d", b->engines.number);
 	for (i = 0; i < ent->neng; i++)
 		if (b->engines.typ == ent->eng[i])
@@ -705,11 +718,8 @@ static int save_block(struct bomber *b, const struct entities *ent)
 	default:
 		return -EINVAL;
 	}
-	printf("F%c", b->fuse.typ + '1');
-	printf("L%c", b->elec.esl + '1');
 	printf("U%u\n", b->tanks.ht);
-	if (b->tanks.sst)
-		printf("U1\n");
+	printf("U%u\n", b->tanks.sst ? 2 : 1);
 	return 0;
 }
 
@@ -798,7 +808,7 @@ static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
 int edit_loop(struct bomber *b, struct tech_numbers *tn,
 	      const struct entities *ent)
 {
-	const char *help = "[METWCBFLU] to edit, I to show, Return to recalculate, QQ to quit\n";
+	const char *help = "[METWCBFLU] to edit, I to show, D to dump, Return to recalculate, QQ to quit\n";
 	struct termios cooked;
 	int rc, c;
 	bool qc;
@@ -874,13 +884,22 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 'U':
 			rc = edit_tanks(b, tn);
 			break;
-		case 's':
-		case 'S':
-			rc = save_block(b, ent);
-			break;
+		case 'd':
+		case 'D':
+			rc = dump_block(b, ent);
+			if (rc)
+				putchar('?');
+			continue;
 		case 'r':
 		case 'R':
 			rc = edit_tech(tn, ent);
+			break;
+		case 'x':
+		case 'X':
+			/* Just a way to redisplay errors/warnings */
+			putchar('>');
+			putchar('\n');
+			rc = 0;
 			break;
 		default:
 			putchar('?');

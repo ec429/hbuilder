@@ -36,6 +36,7 @@ struct turret {
 	enum turret_location lxn;
 	unsigned int gun;
 	unsigned int gc[GC_COUNT];
+	unsigned int slb;
 	unsigned int esl;
 	char *name;
 	bool unlocked;

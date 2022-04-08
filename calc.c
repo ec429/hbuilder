@@ -114,6 +114,10 @@ static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
 			fprintf(stderr, "%s not developed yet!\n", g->name);
 			b->error = true;
 		}
+		if (g->slb && b->fuse.typ != FT_SLABBY) {
+			fprintf(stderr, "%s requires slab-sided fuselage!\n", g->name);
+			b->error = true;
+		}
 		t->need_gunners++;
 		t->drag += g->drg * tn->gdf;
 		tare = g->twt * tn->gtf / 100.0f;
@@ -392,8 +396,23 @@ static float climb_rate(const struct bomber *b, float alt)
 static float airspeed(const struct bomber *b, float alt)
 {
 	float pwr = engine_power(&b->engines, alt);
+	float nwd, a, c, m, cr2;
 
-	return pwr * 375.0f / b->drag;
+	/* drag (other than wing) scales with v², and is normalised
+	 * to 200mph.  So we have:
+	 * v * WD + v³ * NWD / 200² = pwr * 375
+	 * According to WolframAlpha, av³ + bv = c has solution:
+	 * v = (9 a^2 c + sqrt(3) sqrt(27 a^4 c^2 + 4 a^3 b^3))^(1/3)/(2^(1/3) 3^(2/3) a) - ((2/3)^(1/3) b)/(9 a^2 c + sqrt(3) sqrt(27 a^4 c^2 + 4 a^3 b^3))^(1/3)
+	 * This is needlessly uglificated, we can simplify:
+	 * m = (a²c + sqrt(a⁴c² + 4a³b³/27))^(1/3)
+	 * v = m/(2^(1/3) a) - 2^(1/3) b / 3m
+	 */
+	nwd = b->drag - b->wing.drag;
+	a = nwd / 4e4f;
+	c = pwr * 375.0f;
+	m = powf(a*a*c + sqrt(a*a*a*a*c*c + 4.0f*a*a*a*b->wing.drag*b->wing.drag*b->wing.drag/27.0f), 1/3.0f);
+	cr2 = powf(2.0f, 1/3.0f);
+	return m / (cr2 * a) - cr2 * b->wing.drag / (3.0f * m);
 }
 
 static int calc_ceiling(struct bomber *b, struct tech_numbers *tn)
@@ -479,7 +498,7 @@ static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 	unsigned int sch;
 	float sgf;
 
-	b->roll_pen = sqrt(b->wing.ar);
+	b->roll_pen = powf(b->wing.ar, 0.8f) * 0.7f;
 	b->turn_pen = sqrt(max(b->wing.wl - b->manf->tpl, 0.0f));
 	b->manu_pen = b->roll_pen + b->turn_pen;
 	b->evade_factor = (max(30.0f - b->ceiling, 3.0f) / 10.0f) *

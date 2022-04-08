@@ -105,6 +105,7 @@ static int load_gun_word(const char *key, const char *value, void *data)
 	INT_KEY(gun, "GCH", gc[GC_TAIL_HIGH]);
 	INT_KEY(gun, "GCL", gc[GC_TAIL_LOW]);
 	INT_KEY(gun, "GCB", gc[GC_BENEATH]);
+	INT_KEY(gun, "SLB", slb);
 	INT_KEY(gun, "ESL", esl);
 	if (!strcmp(key, "n")) {
 		gun->name = strdup(value);

@@ -3,10 +3,10 @@ _CA:CMI=165:CES=100:CCC=100:n=Crew Accommodation:y=0
 _PD:CLT=21:n=Pre-War Doctrine:y=0
 _BF:FTN=150:FTT=100:FTS=90:FTG=170:FDN=50:FDT=30:FDS=72:FDG=54:FWT=135:FSN=30:FST=64:FSS=27:FSG=20:FFN=30:FFT=40:FFS=27:FFG=20:FVN=20:FVT=30:FVS=20:FVG=8:n=Basic Fuselages:y=0
 _BM:CCN=100:CCT=160:CCS=80:CCG=100:FCN=100:FCT=160:FCS=70:FCG=110:n=Basic Manufacturing:y=0
-_CW:WTS=150:WTC=120:WTF=100:WLD=100:WCF=100:n=Cantilever Wings:y=0
+_CW:WTS=150:WTC=120:WTF=100:WLD=108:WCF=100:n=Cantilever Wings:y=0
 _FT:FUT=120:FUV=100:FGV=80:SFT=0:SFV=0:SFC=0:FUC=60:n=Fuel Tanks:y=0
 _PE:e=Merc:e=Mer4:e=Tigr:ETF=150:EDF=100:EES=0:EET=0:EEC=0:EMC=100:n=Pre-War Engines:y=0
-_BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Beam:t=Tail:GTF=175:GDF=24:GCF=100:GAC=30:GAM=180:n=Basic Turrets:y=0
+_BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Ven1:t=Beam:t=Tail:t=Ta4e:GTF=175:GDF=24:GCF=100:GAC=30:GAM=180:n=Basic Turrets:y=0
 _IB:BTS=70:BTM=100:BTC=0:BMC=0:BBB=8:BBF=2:n=Internal Bay:y=0
 _ED:ESL=0:n=Engine Dynamo:y=0
 FEB:G4T=180:G4C=100:n=Four Engined Bombers:y=1940
@@ -21,7 +21,7 @@ SCF:FTN=80:FTT=60:FTS=50:FCN=220:FCT=300:FCS=140:FWT=125:r=RFF:n=Fuselage Stress
 LWW:WTF=90:WCF=120:n=Lightweight Wings:y=1941
 ISW:WTS=145:WTC=120:WTF=110:WCF=115:r=LWW:n=Improved Wing Structures:y=1942
 SCW:WTS=140:WTC=110:WTF=165:WCF=135:r=ISW:n=Wing Stressing Calcs:y=1943
-RFA:WLD=105:n=Refined Aerofoils:y=1943
+RFA:WLD=114:n=Refined Aerofoils:y=1943
 SST:SFT=110:SFV=50:SFC=125:n=Self-Sealing Tanks:y=1939
 LFT:FUT=100:FUC=81:n=Lightweight Fuel Tanks:y=1941
 IFT:FUT=90:FUV=90:FUC=96:r=LFT:n=Improved Fuel Tanks:y=1942

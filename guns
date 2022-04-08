@@ -11,11 +11,13 @@ Beam:SRV=3:TWT=25:DRG=4:LXN=4:GUN=2:GCD=10:GCV=4:n=Beam mount
 Wast:SRV=3:TWT=30:DRG=3:LXN=4:GUN=2:GCD=10:GCV=10:n=Waist mount
 Vaf1:SRV=5:TWT=36:DRG=7:LXN=5:GUN=1:GCL=10:GCB=10:n=Ventral after (single)
 Vaft:SRV=5:TWT=50:DRG=8:LXN=5:GUN=2:GCL=20:GCB=20:n=Ventral after mount
-Vent:SRV=10:TWT=50:DRG=8:LXN=5:GUN=2:GCV=15:GCL=15:GCB=15:n=Ventral dustbin
-Ven2:SRV=6:TWT=120:DRG=10:LXN=5:GUN=2:GCV=20:GCL=20:GCB=15:n=Ventral turret
+Ven1:SRV=9:TWT=40:DRG=8:LXN=5:GUN=1:GCV=7:GCL=8:GCB=7:n=Ventral (single)
+Vent:SRV=10:TWT=50:DRG=8:LXN=5:GUN=2:GCV=15:GCL=15:GCB=15:n=Ventral dustbin (twin)
+Ven2:SRV=6:TWT=120:DRG=10:LXN=5:GUN=2:GCV=20:GCL=20:GCB=15:n=Ventral turret (twin)
 Ball:SRV=8:TWT=110:DRG=9:LXN=5:GUN=2:GCV=20:GCL=20:GCB=20:n=Ventral ball (twin)
 Bal4:SRV=10:TWT=200:DRG=11:LXN=5:GUN=4:GCV=40:GCL=40:GCB=40:n=Ventral ball (quad)
 Tail:SRV=5:TWT=120:DRG=7:LXN=3:GUN=2:GCH=20:GCL=20:n=Rear turret (twin)
+Ta4e:SRV=8:TWT=220:DRG=10:LXN=3:GUN=4:GCH=30:GCL=36:SLB=1:n=Rear turret (quad, early)
 Tai4:SRV=5:TWT=190:DRG=7:LXN=3:GUN=4:GCH=40:GCL=40:n=Rear turret (quad)
 Tai5:SRV=6:TWT=180:DRG=8:LXN=3:GUN=5:GCH=50:GCL=50:n=Rear turret (.50)
 Aglt:SRV=12:TWT=300:DRG=9:LXN=3:GUN=4:GCH=75:GCL=75:ESL=2:n=Rear turret (radar)
