@@ -385,7 +385,10 @@ static int calc_tanks(struct bomber *b, struct tech_numbers *tn)
 	t->mass = b->engines.fuelrate * t->hours;
 	t->tare = t->mass * (tn->fut / 1000.0f);
 	t->cost = t->tare * (tn->fuc / 100.0f);
-	t->ratio = t->mass / max(b->wing.tare, 1.0f);
+	/* Wing thickness scales linearly with chord, so volume (which
+	 * is what matters for fuel storage) scales with area * chord
+	 */
+	t->ratio = t->mass * 1.45f / max(b->wing.area * b->wing.chord, 1.0f);
 	if (t->ratio > (t->sst ? 2.5f : 2.0f))
 		design_warning(b, "Wing is crammed with fuel, vulnerability high.\n");
 	t->vuln = t->ratio * tn->fuv / 400.0f;
