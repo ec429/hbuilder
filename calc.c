@@ -175,9 +175,10 @@ static int calc_wing(struct bomber *b, struct tech_numbers *tn)
 	w->ld = M_PI * sqrt(w->ar) * (tn->wld / 100.0f) *
 				     (b->manf->wld / 100.0f);
 	arpen = sqrt(max(w->ar, b->manf->wap)) / 6.0f;
+	epen = b->engines.number > 3 ? b->manf->wt4 / 100.0f : 1.0f;
 	w->tare = powf(w->span, tn->wts / 100.0f) *
 		  powf(w->chord, tn->wtc / 100.0f) *
-		  (tn->wtf / 100.0f) * arpen;
+		  (tn->wtf / 100.0f) * arpen * epen;
 	arpen = max(w->ar, 6.0f) / 6.0f;
 	epen = b->engines.number > 3 ? b->manf->wc4 / 100.0f : 1.0f;
 	w->cost = powf(w->tare, b->manf->wcp / 100.0f) *
@@ -215,6 +216,7 @@ static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 	c->gunners = 0;
 	c->pilot = c->nav = false;
 	c->dc = 0;
+	c->bn = 0;
 	for (i = 0; i < c->n; i++) {
 		struct crewman *m = c->men + i;
 
@@ -223,12 +225,18 @@ static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 				     crew_name(m->pos));
 		if (m->pos == CCLASS_P)
 			c->pilot = true;
-		if (m->pos == CCLASS_N)
+		if (m->pos == CCLASS_N) {
 			c->nav = true;
+			c->bn += 1.0f;
+		}
+		if (m->pos == CCLASS_B)
+			c->bn += m->gun ? 0.45f : 0.6f;
 		if (m->pos == CCLASS_G || m->gun)
 			c->gunners++;
-		if (m->pos == CCLASS_E)
+		if (m->pos == CCLASS_E) {
+			c->engineers++;
 			c->dc += m->gun ? 0.75f : 1.0f;
+		}
 		if (m->pos == CCLASS_W)
 			c->dc += m->gun ? 0.45f : 0.6f;
 	}
@@ -257,13 +265,17 @@ static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
 	if (!tn->bt[a->girth])
 		design_error(b, "Bay for %s not developed yet!\n",
 			     describe_bbg(a->girth));
+	if (a->csbs && !tn->csb)
+		design_error(b, "Course-Setting Bomb Sight not developed yet!\n");
 	a->factor = (tn->bt[a->girth] / 1000.0f) *
 		    (b->manf->bt[a->girth] / 100.0f);
 	if (a->cap > bbb)
 		a->bigfactor = (a->cap - bbb) / (tn->bbf * 1e5f);
 	else
 		a->bigfactor = 0.0f;
-	a->tare = a->cap * (a->factor + a->bigfactor);
+	a->tare = a->cap * (a->factor + a->bigfactor) +
+		  (a->csbs ? 90.0f : 20.0f);
+	a->cost = a->csbs ? 1200.0f : 0.0f;
 	a->cookie = a->girth == BB_COOKIE ||
 		    (a->girth == BB_MEDIUM && tn->bmc);
 	return 0;
@@ -477,6 +489,8 @@ static int calc_rely(struct bomber *b, struct tech_numbers *tn)
 			  b->fuse.serv + b->manf->svp / 100.0f);
 	b->fail = b->engines.rely1 * 2.0f + b->engines.rely2 * 30.0f +
 		  b->fuse.fail;
+	if (b->crew.engineers)
+		b->fail *= 0.9f / b->crew.es;
 	return 0;
 }
 
@@ -492,7 +506,7 @@ static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 			  sqrt(max(350.0f - b->cruise_spd, 30.0f) / 1.7f) *
 			  (1.0f - 0.3f / max(b->manu_pen - 4.5f, 0.5f));
 	b->vuln = (b->engines.vuln + b->fuse.vuln) *
-		  max(4.0f - b->crew.dc, 1.0f) +
+		  max(3.8f - sqrt(b->crew.dc), 1.0f) +
 		  b->tanks.vuln;
 	b->flak_factor = b->vuln * 3.0f *
 			 sqrt(max(30.0f - b->ceiling, 3.0f));
@@ -506,6 +520,15 @@ static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 				       3.0f;
 		b->defn[sch] = b->fight_factor[sch] + b->flak_factor;
 	}
+	/* accu contribs bn, speed, esl */
+	/* bn of 1.45 -> .24
+	 * speed of 210 -> .124; 150 -> .101; 340 -> .165.
+	 * esl of High -> .17; Stable -> .208.
+	 */
+	b->accu = sqrt(b->crew.bn) * b->crew.es * 0.2f +
+		  powf(b->cruise_spd, 0.6f) / 200.0f +
+		  sqrt(1.0f + b->elec.esl) * 0.12f +
+		  (b->bay.csbs ? 0.12f : 0.0f);
 	return 0;
 }
 
@@ -516,7 +539,7 @@ static int calc_cost(struct bomber *b, struct tech_numbers *tn)
 		       (tn->cc[b->fuse.typ] / 100.0f) *
 		       (b->engines.number > 2 ? 2.0f : 1.0f);
 	b->cost = b->engines.cost + b->turrets.cost + b->core_cost +
-		  b->fuse.cost + b->wing.cost + b->elec.cost;
+		  b->bay.cost + b->fuse.cost + b->wing.cost + b->elec.cost;
 	return 0;
 }
 

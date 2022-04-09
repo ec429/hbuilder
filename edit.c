@@ -164,6 +164,8 @@ static void dump_bay_fuse(struct bomber *b)
 {
 	printf("[B]omb bay: %ulb, %s", b->bay.cap,
 	       describe_bbg(b->bay.girth));
+	if (b->bay.csbs)
+		printf(", CSBS");
 	printf("; [F]uselage: %s\n", describe_ftype(b->fuse.typ));
 }
 
@@ -213,9 +215,9 @@ static void dump_bomber_calcs(struct bomber *b)
 	       b->cruise_alt * 1000.0f);
 	printf("Service ceiling: %.0fft; range: %.0fmi; initial climb %.0ffpm\n",
 	       b->ceiling * 1000.0f, b->range, b->init_climb);
-	printf("Survivability %.1f/%.1f; Reliability %.1f; Serviceability %.1f\n",
-	       b->defn[0], b->defn[1], (1.0f - b->fail) * 100.0f,
-	       b->serv * 100.0f);
+	printf("Ratings: defn %.1f/%.1f; fail %.1f; svp %.1f; accu %.1f\n",
+	       b->defn[0], b->defn[1], b->fail * 100.0f,
+	       b->serv * 100.0f, b->accu * 100.0f);
 	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.2f))\n",
 	       b->roll_pen, b->turn_pen, b->evade_factor, b->vuln, b->tanks.ratio);
 	printf("Cost: %.0f funds\n", b->cost);
@@ -528,12 +530,12 @@ static int edit_cap(struct bomber *b)
 	return 0;
 }
 
-static int edit_bay(struct bomber *b, struct tech_numbers *tn)
+static int edit_girth(struct bomber *b, struct tech_numbers *tn)
 {
 	unsigned int i;
 	int c;
 
-	printf(">[B]omb capacity, [");
+	printf(">[");
 	for (i = 0; i < BB_COUNT; i++)
 		if (tn->bt[i])
 			putchar("SMC"[i]);
@@ -548,9 +550,6 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 		}
 
 		switch (c) {
-		case 'b':
-		case 'B':
-			return edit_cap(b);
 		case 's':
 		case 'S':
 			i = BB_SMALL;
@@ -572,6 +571,54 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 			putchar('>');
 			dump_bay_fuse(b);
 			return 0;
+		}
+		putchar('?');
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_bay(struct bomber *b, struct tech_numbers *tn)
+{
+	int c;
+
+	if (tn->csb)
+		printf(">[B]omb capacity, [G]irth, [R]egular or [C]S bomb sight, or 0 to cancel\n");
+	else
+		printf(">[B]omb capacity, [G]irth, or 0 to cancel\n");
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		switch (c) {
+		case 'b':
+		case 'B':
+			return edit_cap(b);
+		case 'g':
+		case 'G':
+			return edit_girth(b, tn);
+		case 'r':
+		case 'R':
+			b->bay.csbs = false;
+			putchar('>');
+			dump_bay_fuse(b);
+			return 0;
+		case 'c':
+		case 'C':
+			if (tn->csb) {
+				b->bay.csbs = true;
+				putchar('>');
+				dump_bay_fuse(b);
+				return 0;
+			}
+			break;
+		default:
+			break;
 		}
 		putchar('?');
 	} while (1);
@@ -716,17 +763,18 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 	printf("BB%u\n", b->bay.cap);
 	switch (b->bay.girth) {
 	case BB_SMALL:
-		printf("BS");
+		printf("BGS");
 		break;
 	case BB_MEDIUM:
-		printf("BM");
+		printf("BGM");
 		break;
 	case BB_COOKIE:
-		printf("BC");
+		printf("BGC");
 		break;
 	default:
 		return -EINVAL;
 	}
+	printf("B%c", b->bay.csbs ? 'C' : 'R');
 	printf("U%u\n", b->tanks.ht);
 	printf("U%u\n", b->tanks.sst ? 2 : 1);
 	return 0;

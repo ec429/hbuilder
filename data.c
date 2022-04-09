@@ -260,6 +260,7 @@ static int load_manf_word(const char *key, const char *value, void *data)
 	INT_KEY(man, "WCF", wcf);
 	INT_KEY(man, "WCP", wcp);
 	INT_KEY(man, "WC4", wc4);
+	INT_KEY(man, "WT4", wt4);
 	INT_KEY(man, "ACC", acc);
 	INT_KEY(man, "ACT", act);
 	INT_KEY(man, "GEO", geo);
@@ -451,6 +452,7 @@ static int load_tech_word(const char *key, const char *value, void *data)
 	INT_KEY(loader->tech, "BBB", num.bbb);
 	INT_KEY(loader->tech, "BBF", num.bbf);
 	INT_KEY(loader->tech, "ESL", num.esl);
+	INT_KEY(loader->tech, "CSB", num.csb);
 	if (!strcmp(key, "e")) {
 		struct engine *eng;
 		unsigned int i;

@@ -84,7 +84,8 @@ enum fuse_type {
 struct manf {
 	struct list_head list;
 	char ident[3];
-	unsigned int wap, wld, bt[BB_COUNT], bbb, wcf, wcp, wc4, acc, act, geo;
+	unsigned int wap, wld, bt[BB_COUNT], bbb;
+	unsigned int wcf, wcp, wc4, wt4, acc, act, geo;
 	unsigned int tpl, fd[FT_COUNT], ft[FT_COUNT], svp, bof;
 	char *eman; // engine manufacturer
 	char *name;
@@ -111,7 +112,7 @@ struct tech_numbers {
 	unsigned int etf, edf, ees, eet, eec, emc; // Engine Mounts
 	unsigned int gtf, gdf, gcf, gac, gam; // Gun Turrets
 	unsigned int bt[BB_COUNT], bmc, bbb, bbf;
-	unsigned int esl;
+	unsigned int esl, csb; // Equipment
 };
 
 struct tech {

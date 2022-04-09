@@ -108,13 +108,15 @@ Every aircraft must have a Pilot and Navigator.  There is rarely any
  of Bomb-aimers, Wireless-ops and Engineers occurs mostly on an operational
  level that doesn't appear in the stats calculated by the editor.
 
-[B]omb bay gives the choice of selecting girth ([S]mall, [M]edium or
- [C]ookie) or pressing [B] again to input the bomb capacity in lb.
+[B]omb bay has sub-modes; input [B]omb capacity in lb, or select [G]irth
+ (from [S]mall, [M]edium or [C]ookie).  Or choose between a [R]egular bomb-
+ sight and a [C]ourse-Setting bomb sight (if developed).
 Girth determines whether the aircraft can carry High Capacity bombs such as
  the 4,000lb "cookie"; Medium cannot close the doors over a cookie so
  incurs a speed penalty when carrying it (6% in the current Harris code),
  while Small cannot carry it at all.  Selecting a greater girth incurs a
  tare weight penalty.
+The Course-Setting bomb sight improves bombing accuracy significantly.
 
 [F]uselage offers a choice of fuselage types, selected with number keys.
  Slender fuselages offer lower tare weight and drag, but increase cost and

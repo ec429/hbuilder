@@ -74,11 +74,12 @@ struct crew {
 	unsigned int n;
 	struct crewman men[MAX_CREW];
 	/* Output cache */
-	unsigned int gunners;
+	unsigned int gunners, engineers;
 	bool pilot, nav;
 	float tare;
 	float gross;
 	float dc;
+	float bn;
 	float cct; /* add to core_tare for core_cost */
 	float es;
 };
@@ -87,10 +88,12 @@ struct bombbay {
 	/* Inputs */
 	unsigned int cap;
 	enum bb_girth girth;
+	bool csbs; /* not really bomb "bay" but whatever */
 	/* Output cache */
 	float factor;
 	float bigfactor;
 	float tare;
+	float cost; /* csbs cost, rest is paid through core_tare */
 	bool cookie;
 };
 
@@ -169,6 +172,7 @@ struct bomber {
 	float vuln;
 	float fight_factor[2], flak_factor;
 	float defn[2];
+	float accu;
 	float tproto;
 	float tprod;
 	float cproto;
