@@ -105,23 +105,70 @@ enum nav_aid {
 
 struct tech_numbers {
 	/* These MUST all be `unsigned int`!  Copying code assumes this. */
-	unsigned int g4t, g4c; // General Arrangement
-	unsigned int cmi, ces, ccc; // Crew Stations
-	unsigned int clt; // CLimb Time
+	/* Core block.  Cannot change even in marks. */
+	unsigned int fwt; // Fuse Wing Tare * 100
+	// Wings
+	unsigned int wts; // Wing Tare Span exponent * 100
+	unsigned int wtc; // Wing Tare Chord exponent * 100
+	unsigned int wtf; // Wing Tare Factor * 100
+	unsigned int wcf; // Wing Cost Factor * 100
+	// Engine Mounts
+	unsigned int etf; // Engine Tare Factor * 100
+	// Bomb bay
+	unsigned int bt[BB_COUNT]; // Bay Tare factor * 1000
+	unsigned int bbb; // Bay Bigfactor Base / 1000lb
+	unsigned int bbf; // Bay Bigfactor Frac / 1e5
+	/* Mark block.  Cannot change in refits. */
+	unsigned int mark_block[0];
 	unsigned int ft[FT_COUNT]; // Fuse Tare * 100
 	unsigned int fd[FT_COUNT]; // Fuse Drag * 10
 	unsigned int fs[FT_COUNT]; // Fuse Serv * 10
 	unsigned int ff[FT_COUNT]; // Fuse Fail * 10
 	unsigned int fv[FT_COUNT]; // Fuse Vuln * 100
-	unsigned int fwt; // Fuse Wing Tare * 100
 	unsigned int cc[FT_COUNT]; // Core Cost * 100
 	unsigned int fc[FT_COUNT]; // Fuse Cost * 100
-	unsigned int wts, wtc, wtf, wld, wcf; // Wings
-	unsigned int fut, fuv, fgv, sft, sfv, sfc, fuc; // Fuel Tanks
-	unsigned int etf, edf, ees, eet, eec, emc; // Engine Mounts
-	unsigned int gtf, gdf, gcf, gac, gam; // Gun Turrets
-	unsigned int bt[BB_COUNT], bmc, bbb, bbf;
-	unsigned int esl, csb, na[NA_COUNT]; // Equipment
+	// Wings
+	unsigned int wld; // Wing Lift/Drag * 100
+	// General Arrangement, 4 Engines
+	unsigned int g4t; // tare penalty for 4+ engine mounts
+	unsigned int g4c; // cost scaling for 4+ engines * 100
+	// Fuel Tanks
+	unsigned int fut; // Fuel Tare * 100
+	unsigned int fuv; // Fuel Vuln * 100
+	unsigned int fuc; // Fuel Cost * 100
+	unsigned int fgv; // Fuel Geodetic Vuln factor * 100
+	// Engine Mounts
+	unsigned int edf; // Engine Drag Factor * 100
+	unsigned int emc; // Engine Mounting Cost factor * 100
+	unsigned int ees; // Power Egg Serv factor * 100
+	unsigned int eet; // Power Egg Tare factor * 100
+	unsigned int eec; // Power Egg Cost factor * 100
+	// Gun Turrets
+	unsigned int gtf; // Gun Tare Factor * 100
+	unsigned int gdf; // Gun Drag Factor
+	unsigned int gcf; // Gun Cost Factor * 100
+	// Equipment
+	unsigned int esl; // Electric Supply Level (enum elec_level)
+	/* Refit block. */
+	unsigned int refit_block[0];
+	// Fuel Tanks, Self Sealing
+	unsigned int sft; // SST Tare scaling * 100
+	unsigned int sfv; // SST Vuln scaling * 100
+	unsigned int sfc; // SST Cost scaling * 100
+	// Crew Stations
+	unsigned int cmi; // crewman incidentals tare
+	unsigned int ces; // crewman effective skill * 100
+	unsigned int ccc; // crewman core cost scaling * 100
+	// Gun Turrets
+	unsigned int gam; // Gun Ammo Mass, lb/gun
+	unsigned int gac; // Gun Ammo track Cost * 10
+	// Equipment
+	unsigned int csb; // Mk XIV Course-Setting Bombsight (flag)
+	unsigned int na[NA_COUNT]; // Nav Aid (flag)
+	/* Doctrine block.  Changes even without refit. */
+	unsigned int doctrine_block[0];
+	unsigned int clt; // CLimb Time
+	unsigned int bmc; // Bay, Medium, Cookie carriage (flag)
 };
 
 struct tech {
