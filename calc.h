@@ -7,7 +7,7 @@
 struct engines {
 	/* Inputs */
 	unsigned int number;
-	struct engine *typ;
+	struct engine *typ, *mou;
 	bool egg;
 	/* Output cache */
 	bool odd, manumatch;

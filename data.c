@@ -170,9 +170,15 @@ int free_guns(struct list_head *head)
 	return 0;
 }
 
+struct engine_loader {
+	struct engine *eng;
+	struct list_head *engines;
+};
+
 static int load_engine_word(const char *key, const char *value, void *data)
 {
-	struct engine *eng = data;
+	struct engine_loader *loader = data;
+	struct engine *eng = loader->eng;
 
 	INT_KEY(eng, "BHP", bhp);
 	INT_KEY(eng, "VUL", vul);
@@ -194,6 +200,18 @@ static int load_engine_word(const char *key, const char *value, void *data)
 			return -ENOMEM;
 		return 0;
 	}
+	if (!strcmp(key, "u")) {
+		struct engine *ueng;
+
+		list_for_each_entry(ueng, loader->engines) {
+			if (!strcmp(value, ueng->ident)) {
+				eng->u = ueng;
+				return 0;
+			}
+		}
+		fprintf(stderr, "load_engine_word: No such u-engine '%s'\n", value);
+		return -EINVAL;
+	}
 
 	fprintf(stderr, "load_engine_word: unrecognised key '%s'\n", key);
 	return -EINVAL;
@@ -203,6 +221,7 @@ static int load_engine(const char *line, void *data)
 {
 	struct engine *eng = calloc(1, sizeof(*eng));
 	struct list_head *head = data;
+	struct engine_loader loader;
 	int rc;
 
 	if (strcspn(line, ":") != 4) {
@@ -212,7 +231,9 @@ static int load_engine(const char *line, void *data)
 	}
 	memcpy(eng->ident, line, 4);
 	eng->ident[4] = 0;
-	rc = for_each_word(line + 5, load_engine_word, eng);
+	loader.eng = eng;
+	loader.engines = head;
+	rc = for_each_word(line + 5, load_engine_word, &loader);
 out:
 	if (rc) {
 		fprintf(stderr, "load_engine: failed to load %s\n", eng->ident);

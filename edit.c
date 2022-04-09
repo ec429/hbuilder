@@ -149,10 +149,16 @@ static void dump_manf(struct bomber *b)
 static void dump_engines(struct bomber *b)
 {
 	struct engine *e = b->engines.typ;
+	struct engine *m = b->engines.mou;
 
-	printf("[E]ngines: %u × %s %s (%u hp, SCL %u%s)\n",
-	       b->engines.number, e->manu, e->name, e->bhp, e->scl,
-	       b->engines.egg ? ", Power Egg" : "");
+	printf("[E]ngines: %u × %s %s (%u hp, SCL %u",
+	       b->engines.number, e->manu, e->name, e->bhp, e->scl);
+	if (b->engines.egg)
+		printf(", Power Egg");
+	if (m != e)
+		printf(", mounts for %s", m->name);
+	putchar(')');
+	putchar('\n');
 }
 
 static void dump_turrets(struct bomber *b)
@@ -208,7 +214,7 @@ static void dump_elec_fuel(struct bomber *b)
 	for (i = 0; i < NA_COUNT; i++)
 		if (b->elec.navaid[i])
 			printf(", %s", describe_navaid(i));
-	printf("; f[U]el: %.1f hours%s\n", b->tanks.ht / 10.0f,
+	printf("; f[U]el: %.1f hours%s\n", b->tanks.hours,
 	       b->tanks.sst ? ", self-sealing" : "");
 }
 
@@ -310,23 +316,16 @@ static int edit_manf(struct bomber *b, struct tech_numbers *tn,
 	return -EIO;
 }
 
-static int edit_eng(struct bomber *b, struct tech_numbers *tn,
-		    const struct entities *ent)
+static int edit_eng_mount(struct bomber *b, struct tech_numbers *tn,
+			  const struct entities *ent)
 {
 	unsigned int i;
 	int c;
 
-	if (b->refit >= REFIT_MOD) {
-		fprintf(stderr, "%s refit cannot change engines.\n", describe_refit(b->refit));
-		return -EINVAL;
-	} else if (b->refit) {
-		/* Mark can change type but not number */
-		printf(">Select engine (0 to cancel)\n");
-	} else {
-		printf(">Select engine (0 to cancel) or number\n");
-	}
+	printf(">Overbuild mounts for engine (0 to cancel)\n");
 	for (i = 0; i < ent->neng; i++)
-		if (ent->eng[i]->unlocked)
+		if (ent->eng[i] == b->engines.typ ||
+		    ent->eng[i]->u == b->engines.typ)
 			printf("[%c] %s %s\n", i + 'A', ent->eng[i]->manu,
 			       ent->eng[i]->name);
 
@@ -339,6 +338,59 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 			return 0;
 		}
 
+		i = c - 'A';
+		if (i < ent->neng && (ent->eng[i] == b->engines.typ ||
+				      ent->eng[i]->u == b->engines.typ)) {
+			b->engines.mou = ent->eng[i];
+			putchar('>');
+			dump_engines(b);
+			return 0;
+		}
+		putchar('?');
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_eng(struct bomber *b, struct tech_numbers *tn,
+		    const struct entities *ent)
+{
+	const struct bomber *p = b->parent;
+	unsigned int i;
+	int c;
+
+	if (b->refit == REFIT_MOD && b->parent->engines.mou != b->parent->engines.typ) {
+		/* Mod can upgrade to mounts' type */
+		printf(">Select engine, or 0 to cancel\n");
+	} else if (b->refit >= REFIT_MOD) {
+		fprintf(stderr, "%s refit cannot change engines.\n", describe_refit(b->refit));
+		return -EINVAL;
+	} else if (b->refit) {
+		/* Mark can change type but not number */
+		printf(">Select engine, @ for mounts, or 0 to cancel\n");
+	} else {
+		printf(">Select engine, @ for mounts, number, or 0 to cancel\n");
+	}
+	for (i = 0; i < ent->neng; i++) {
+		const struct engine *e = ent->eng[i];
+
+		if (e->unlocked && (b->refit < REFIT_MOD ||
+				    p->engines.typ == e ||
+				    p->engines.mou == e))
+			printf("[%c] %s %s\n", i + 'A', e->manu, e->name);
+	}
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		if (c == '@' && b->refit < REFIT_MOD)
+			return edit_eng_mount(b, tn, ent);
 		i = c - '0';
 		if (i >= 1 && i < 9 && !b->refit) {
 			b->engines.number = i;
@@ -347,11 +399,15 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 			return 0;
 		}
 		i = c - 'A';
-		if (i < 0 || i >= ent->neng || !ent->eng[i]->unlocked) {
+		if (i < 0 || i >= ent->neng || !ent->eng[i]->unlocked ||
+		    (b->refit == REFIT_MOD &&
+		     p->engines.typ != ent->eng[i] &&
+		     p->engines.mou != ent->eng[i])) {
 			putchar('?');
 			continue;
 		}
 		b->engines.typ = ent->eng[i];
+		b->engines.mou = ent->eng[i];
 		putchar('>');
 		dump_engines(b);
 		return 0;
@@ -904,6 +960,7 @@ static int edit_fuel(struct bomber *b)
 
 	if (v) {
 		b->tanks.ht = v;
+		b->tanks.hours = v / 10.0f;
 		putchar('>');
 		dump_elec_fuel(b);
 	}
@@ -991,6 +1048,10 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 	for (i = 0; i < ent->neng; i++)
 		if (b->engines.typ == ent->eng[i])
 			printf("E%c", i + 'A');
+	if (b->engines.typ != b->engines.mou)
+		for (i = 0; i < ent->neng; i++)
+			if (b->engines.mou == ent->eng[i])
+				printf("E@%c", i + 'A');
 	for (i = LXN_NOSE; i < LXN_COUNT; i++)
 		for (j = 0; j < ent->ngun; j++)
 			if (b->turrets.typ[i] == ent->gun[j])

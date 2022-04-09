@@ -84,6 +84,10 @@ When the builder is integrated into Harris, each manufacturer will only be
 Stats for each engine are defined in file `eng`.  These include 'SCL', or
  supercharging level (1=single-speed, 2=two-speed, 3=two-stage), which
  affects high-altitude performance.
+You can also overbuild the mounts for a later (possibly not-yet-unlocked)
+ engine, to facilitate changing to the later engine in refits.  Press [@]
+ for a list of mount options to select from.  Note that changing the engine
+ type will reset the mount type to match it.
 
 [T]urrets displays available turrets to add, selected with letter keys;
  also existing turrets to remove, selected with number keys.  As usual, 0
@@ -161,7 +165,7 @@ Techs have an approximate year (though in-game they may unlock sooner or
 REFIT SYSTEM
 
 [K] starts the process of developing a refit of the current design.  Any
- changes made to the design (or to the technology state) will be undone
+ changes made to the design (but not the technology state!) will be undone
  upon leaving the refit (for which press [J]).
 You can develop a new design based on an existing one ("mar[K]"), which
  reduces development time and cost relative to a clean-sheet design, or
@@ -177,13 +181,15 @@ The following cannot be changed in refits:
 * Fuselage type
 
 The following changes can be made in marks but not mods:
-* change Engine type
+* change Engine type or mounts
 * add new Turrets
 * add new Crew
 * change eLectric supply level
 * change fUel capacity
 
 The following changes can be made even in mods:
+* upgrade Engine on previously overbuilt mounts
+  - note that your fuelmass stays the same, so fuel in hours may decrease!
 * remove Turrets
 * add Turrets to slots that were originally used on this mark
 * remove Crew

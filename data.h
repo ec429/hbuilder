@@ -57,6 +57,7 @@ struct engine {
 	unsigned int scl;
 	unsigned int twt;
 	unsigned int drg;
+	struct engine *u; /* can mod to us with overbuilt mounts */
 	char *manu;
 	char *name;
 	bool unlocked;

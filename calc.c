@@ -16,6 +16,7 @@ void init_bomber(struct bomber *b, struct manf *m, struct engine *e)
 	b->manf = m;
 	b->engines.number = 1;
 	b->engines.typ = e;
+	b->engines.mou = e;
 	b->wing.area = 240;
 	b->wing.art = 70;
 	b->crew.n = 2;
@@ -67,9 +68,17 @@ static int calc_engines(struct bomber *b)
 	float ees = 1, eet = 1, eec = 1;
 	float mounts = 0;
 
+	if (!e->mou) {
+		design_error(b, "Mount type not specified!\n");
+		return -EINVAL;
+	}
+	if (e->mou != e->typ && e->mou->u != e->typ)
+		design_error(b, "Mounts are for wrong engine type %s!\n",
+			     e->mou->name);
 	if (!e->typ->unlocked)
 		design_error(b, "%s not developed yet!\n", e->typ->name);
-	if (b->refit >= REFIT_MOD && e->typ != b->parent->engines.typ)
+	if (b->refit >= REFIT_MOD && e->typ != b->parent->engines.typ &&
+	    e->typ != b->parent->engines.mou)
 		design_error(b, "Engines changed in %s refit!\n",
 			     describe_refit(b->refit));
 	if (b->refit && e->number != b->parent->engines.number)
@@ -98,7 +107,8 @@ static int calc_engines(struct bomber *b)
 		e->rely2 = e->rely1;
 	e->serv = 1.0f - powf(1.0f - (e->typ->svc / 1000.0f) * ees,
 			      e->number);
-	e->cost = e->number * e->typ->cos * eec * (1.0f + 0.5f * tn->emc / 100.0f);
+	e->cost = e->number * e->typ->cos * eec +
+		  e->number * max(e->typ->cos, e->mou->cos) * eec * 0.5f * tn->emc / 100.0f;
 	if (e->number > 3) {
 		e->cost *= tn->g4c / 100.0f;
 		if (!tn->g4c || !tn->g4t)
@@ -106,15 +116,16 @@ static int calc_engines(struct bomber *b)
 	}
 	e->scl = e->typ->scl;
 	e->fuelrate = e->number * e->typ->bhp * 0.36f;
-	mounts = 220 * e->number;
+	mounts = e->number;
 	if (e->odd)
-		mounts -= 55;
+		mounts -= 0.25f;
+	mounts *= max(e->typ->twt, e->mou->twt) / 6.6f;
 	if (e->number > 3)
 		mounts += tn->g4t * (e->number / 2 - 1);
 	if (e->manumatch)
 		mounts *= 0.8f;
 	e->tare = e->number * e->typ->twt * eet + mounts;
-	e->drag = e->number * e->typ->drg * tn->edf / 100.0f;
+	e->drag = e->number * max(e->typ->drg, e->mou->drg) * tn->edf / 100.0f;
 	return 0;
 }
 
@@ -472,8 +483,13 @@ static int calc_tanks(struct bomber *b)
 	if (b->refit >= REFIT_MOD && t->ht != b->parent->tanks.ht)
 		design_error(b, "Fuel capacity changed in %s refit!\n",
 			     describe_refit(b->refit));
-	t->hours = t->ht / 10.0f;
-	t->mass = b->engines.fuelrate * t->hours;
+	if (b->refit == REFIT_MOD) {
+		t->mass = b->parent->tanks.mass;
+		t->hours = t->mass / b->engines.fuelrate;
+	} else {
+		t->hours = t->ht / 10.0f;
+		t->mass = b->engines.fuelrate * t->hours;
+	}
 	t->tare = t->mass * (tn->fut / 1000.0f);
 	t->cost = t->tare * (tn->fuc / 100.0f);
 	/* Wing thickness scales linearly with chord, so volume (which
@@ -714,6 +730,10 @@ static int calc_dev(struct bomber *b)
 				      powf(b->engines.cost, 0.4f) * 0.6f;
 			add_tprod += powf(b->engines.tare, 0.8f) *
 				    powf(b->engines.cost, 0.4f) * 0.32f;
+			if (b->engines.typ == b->parent->engines.mou) {
+				add_tproto *= 0.1f;
+				add_tprod *= 0.1f;
+			}
 		}
 		for (i = LXN_NOSE; i < LXN_COUNT; i++)
 			if (b->turrets.typ[i] != b->parent->turrets.typ[i]) {
@@ -749,14 +769,22 @@ static int calc_dev(struct bomber *b)
 			add_tproto += b->tanks.cost * 0.5f;
 			add_tprod += b->tanks.cost * 0.8f;
 		}
-		b->tproto += sqrt(add_tproto);
-		b->tprod += sqrt(add_tprod);
+		b->tproto += sqrt(add_tproto) * 100.0f / bof;
+		b->tprod += sqrt(add_tprod) * 100.0f / bof;
 		b->cproto += add_tproto;
 		b->cprod += add_tprod;
 		break;
 	case REFIT_MOD:
-		b->tproto = base_tproto * 7.0f / bof;
-		b->tprod = base_tprod * 7.0f / bof;
+		if (b->engines.typ != b->parent->engines.typ) {
+			add_tproto += powf(b->engines.tare, 0.6f) *
+				      powf(b->engines.cost, 0.4f) * 0.06f;
+			add_tprod += powf(b->engines.tare, 0.8f) *
+				    powf(b->engines.cost, 0.4f) * 0.032f;
+		}
+		b->tproto = base_tproto * 7.0f / bof +
+			    sqrt(add_tproto) * 100.0f / bof;
+		b->tprod = base_tprod * 7.0f / bof +
+			   sqrt(add_tprod) * 100.0f / bof;
 		b->cproto = b->cost * 0.9f;
 		b->cprod = b->cost * 1.2f;
 		break;
