@@ -53,8 +53,9 @@ static void design_warning(struct bomber *b, const char *format, ...)
 	}
 }
 
-static int calc_engines(struct bomber *b, struct tech_numbers *tn)
+static int calc_engines(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct engines *e = &b->engines;
 	float ees = 1, eet = 1, eec = 1;
 	float mounts = 0;
@@ -110,8 +111,9 @@ static int gcr[GC_COUNT] = {
 	[GC_BENEATH] = 3,
 };
 
-static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
+static int calc_turrets(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct turrets *t = &b->turrets;
 	unsigned int i, j;
 
@@ -158,8 +160,9 @@ static int calc_turrets(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_wing(struct bomber *b, struct tech_numbers *tn)
+static int calc_wing(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct wing *w = &b->wing;
 	float arpen, epen;
 
@@ -208,8 +211,9 @@ const char *crew_name(enum crewpos c)
 	}
 }
 
-static int calc_crew(struct bomber *b, struct tech_numbers *tn)
+static int calc_crew(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct crew *c = &b->crew;
 	unsigned int i, j;
 
@@ -297,10 +301,11 @@ static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
+static int calc_bombbay(struct bomber *b)
 {
-	unsigned int bbb = (tn->bbb + b->manf->bbb) * 1000;
+	const struct tech_numbers *tn = &b->tn;
 	struct bombbay *a = &b->bay;
+	unsigned int bbb;
 
 	if (a->girth < 0 || a->girth >= BB_COUNT) { /* can't happen */
 		design_error(b, "Nonexistent bombbay girth!\n");
@@ -313,6 +318,7 @@ static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
 		design_error(b, "Course-Setting Bomb Sight not developed yet!\n");
 	a->factor = (tn->bt[a->girth] / 1000.0f) *
 		    (b->manf->bt[a->girth] / 100.0f);
+	bbb = (tn->bbb + b->manf->bbb) * 1000;
 	if (a->cap > bbb)
 		a->bigfactor = (a->cap - bbb) / (tn->bbf * 1e5f);
 	else
@@ -325,8 +331,9 @@ static int calc_bombbay(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_fuselage(struct bomber *b, struct tech_numbers *tn)
+static int calc_fuselage(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct fuselage *f = &b->fuse;
 
 	/* First need core_tare, as input to fuse_tare */
@@ -355,8 +362,9 @@ static unsigned int nacost[NA_COUNT] = {
 	[NA_OBOE] = 3000,
 };
 
-static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
+static int calc_electrics(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct electrics *e = &b->elec;
 	float ncost = 0.0f;
 	unsigned int i;
@@ -398,8 +406,9 @@ static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_tanks(struct bomber *b, struct tech_numbers *tn)
+static int calc_tanks(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	struct tanks *t = &b->tanks;
 
 	t->hours = t->ht / 10.0f;
@@ -491,8 +500,9 @@ static float airspeed(const struct bomber *b, float alt)
 	return (m - b->wing.drag) / (2.0f * a);
 }
 
-static int calc_ceiling(struct bomber *b, struct tech_numbers *tn)
+static int calc_ceiling(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	unsigned int alt; // units of 500ft
 	float tim = 0; // minutes
 
@@ -509,8 +519,9 @@ static int calc_ceiling(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_perf(struct bomber *b, struct tech_numbers *tn)
+static int calc_perf(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
 	int rc;
 
 	b->tare = b->core_tare + b->fuse.tare + b->tanks.tare +
@@ -530,7 +541,7 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 		design_error(b, "Take-off speed is dangerously high!\n");
 	else if (b->takeoff_spd > 110.0f)
 		design_warning(b, "Take-off speed is worryingly high.\n");
-	rc = calc_ceiling(b, tn);
+	rc = calc_ceiling(b);
 	if (rc)
 		return rc;
 	b->cruise_alt = min(b->ceiling, 10.0f) +
@@ -551,7 +562,7 @@ static int calc_perf(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_rely(struct bomber *b, struct tech_numbers *tn)
+static int calc_rely(struct bomber *b)
 {
 	b->serv = 1.0f - (b->engines.serv * 6.0f + b->turrets.serv +
 			  b->fuse.serv + b->manf->svp / 100.0f);
@@ -562,7 +573,7 @@ static int calc_rely(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_combat(struct bomber *b, struct tech_numbers *tn)
+static int calc_combat(struct bomber *b)
 {
 	unsigned int sch;
 	float sgf;
@@ -600,8 +611,10 @@ static int calc_combat(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_cost(struct bomber *b, struct tech_numbers *tn)
+static int calc_cost(struct bomber *b)
 {
+	const struct tech_numbers *tn = &b->tn;
+
 	b->core_cost = (b->core_tare + b->crew.cct) *
 		       (b->manf->acc / 100.0f) *
 		       (tn->cc[b->fuse.typ] / 100.0f) *
@@ -612,7 +625,7 @@ static int calc_cost(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
-static int calc_dev(struct bomber *b, struct tech_numbers *tn)
+static int calc_dev(struct bomber *b)
 {
 	b->tproto = powf(b->gross, 0.3) * powf(b->cost, 0.2) *
 		    100.0f / max(b->manf->bof, 1);
@@ -620,6 +633,38 @@ static int calc_dev(struct bomber *b, struct tech_numbers *tn)
 		   60.0f / max(b->manf->bof, 1);
 	b->cproto = b->cost * 15.0f;
 	b->cprod = b->cost * 30.0f;
+	return 0;
+}
+
+static int check_refit(struct bomber *b, struct tech_numbers *tn)
+{
+	size_t start;
+
+	if (!b->refit) {
+		b->tn = *tn;
+		return 0;
+	}
+	if (!b->parent) {
+		design_error(b, "Refit must have a parent design!");
+		return -EINVAL;
+	}
+	b->tn = b->parent->tn;
+	switch (b->refit) {
+	case REFIT_MARK:
+		start = offsetof(struct tech_numbers, mark_block);
+		break;
+	case REFIT_MOD:
+		start = offsetof(struct tech_numbers, refit_block);
+		break;
+	case REFIT_DOCTRINE:
+		start = offsetof(struct tech_numbers, doctrine_block);
+		break;
+	default:
+		design_error(b, "Unknown refit level %d\n", b->refit);
+		return -EINVAL;
+	}
+	memcpy(((char *)&b->tn) + start, ((char *)tn) + start,
+	       sizeof(*tn) - start);
 	return 0;
 }
 
@@ -631,55 +676,60 @@ int calc_bomber(struct bomber *b, struct tech_numbers *tn)
 	b->error = false;
 	b->new = 0;
 
-	rc = calc_engines(b, tn);
+	rc = check_refit(b, tn);
+	if (rc)
+		return rc;
+	tn = &b->tn;
+
+	rc = calc_engines(b);
 	if (rc)
 		return rc;
 
-	rc = calc_turrets(b, tn);
+	rc = calc_turrets(b);
 	if (rc)
 		return rc;
 
-	rc = calc_wing(b, tn);
+	rc = calc_wing(b);
 	if (rc)
 		return rc;
 
-	rc = calc_crew(b, tn);
+	rc = calc_crew(b);
 	if (rc)
 		return rc;
 
-	rc = calc_bombbay(b, tn);
+	rc = calc_bombbay(b);
 	if (rc)
 		return rc;
 
-	rc = calc_fuselage(b, tn);
+	rc = calc_fuselage(b);
 	if (rc)
 		return rc;
 
-	rc = calc_electrics(b, tn);
+	rc = calc_electrics(b);
 	if (rc)
 		return rc;
 
-	rc = calc_tanks(b, tn);
+	rc = calc_tanks(b);
 	if (rc)
 		return rc;
 
-	rc = calc_perf(b, tn);
+	rc = calc_perf(b);
 	if (rc)
 		return rc;
 
-	rc = calc_rely(b, tn);
+	rc = calc_rely(b);
 	if (rc)
 		return rc;
 
-	rc = calc_combat(b, tn);
+	rc = calc_combat(b);
 	if (rc)
 		return rc;
 
-	rc = calc_cost(b, tn);
+	rc = calc_cost(b);
 	if (rc)
 		return rc;
 
-	rc = calc_dev(b, tn);
+	rc = calc_dev(b);
 	if (rc)
 		return rc;
 

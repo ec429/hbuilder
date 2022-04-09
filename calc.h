@@ -138,10 +138,20 @@ struct tanks {
 	float vuln;
 };
 
+enum refit_level {
+	REFIT_FRESH, // A clean-sheet design
+	REFIT_MARK, // A new design based on an old one
+	REFIT_MOD, // Alterations to existing airframes
+	REFIT_DOCTRINE, // Effect of doctrine changes
+
+	REFIT_LEVELS
+};
+
 #define MAX_EW	16
 #define EW_LEN	80
 struct bomber {
 	/* Inputs */
+	struct bomber *parent;
 	struct manf *manf;
 	struct engines engines;
 	struct turrets turrets;
@@ -151,6 +161,8 @@ struct bomber {
 	struct fuselage fuse;
 	struct electrics elec;
 	struct tanks tanks;
+	enum refit_level refit;
+	struct tech_numbers tn;
 	/* Output cache */
 	bool error;
 	unsigned int new;
