@@ -220,10 +220,11 @@ static void dump_bomber_calcs(struct bomber *b)
 	       b->serv * 100.0f, b->accu * 100.0f);
 	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.2f))\n",
 	       b->roll_pen, b->turn_pen, b->evade_factor, b->vuln, b->tanks.ratio);
-	printf("Cost: %.0f funds\n", b->cost);
-	printf("\t(core %.0f, fuse %.0f, wing %.0f, eng %.0f, gun %.0f, elec %.0f)\n",
-	       b->core_cost, b->fuse.cost, b->wing.cost, b->engines.cost,
-	       b->turrets.cost, b->elec.cost);
+	printf("Cost: %.0f funds (core %.0f, fuse %.0f, wing %.0f, eng %.0f)\n",
+	       b->cost, b->core_cost, b->fuse.cost, b->wing.cost,
+	       b->engines.cost);
+	printf("\t(tanks %.0f, gun %.0f, elec %.0f)\n",
+	       b->tanks.cost, b->turrets.cost, b->elec.cost);
 	printf("Prototype in %.0f days for %.0f funds\n",
 	       b->tproto, b->cproto);
 	printf("Production in %.0f days for %.0f funds\n",

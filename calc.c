@@ -539,7 +539,8 @@ static int calc_cost(struct bomber *b, struct tech_numbers *tn)
 		       (tn->cc[b->fuse.typ] / 100.0f) *
 		       (b->engines.number > 2 ? 2.0f : 1.0f);
 	b->cost = b->engines.cost + b->turrets.cost + b->core_cost +
-		  b->bay.cost + b->fuse.cost + b->wing.cost + b->elec.cost;
+		  b->bay.cost + b->fuse.cost + b->wing.cost +
+		  b->elec.cost + b->tanks.cost;
 	return 0;
 }
 
