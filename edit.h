@@ -6,6 +6,7 @@
 const char *describe_bbg(enum bb_girth girth);
 const char *describe_esl(enum elec_level esl);
 const char *describe_navaid(enum nav_aid na);
+const char *describe_refit(enum refit_level refit);
 
 int editor(struct bomber *b, struct tech_numbers *tn,
 	   const struct entities *ent);

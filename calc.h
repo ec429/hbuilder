@@ -104,6 +104,7 @@ struct fuselage {
 	/* Output cache */
 	float serv, fail;
 	float tare;
+	float cram;
 	float cost;
 	float vuln;
 	float drag;
@@ -123,6 +124,7 @@ struct electrics {
 	bool navaid[NA_COUNT];
 	/* Output cache */
 	float cost;
+	float ncost;
 };
 
 struct tanks {
@@ -193,7 +195,8 @@ struct bomber {
 	float cprod;
 };
 
-bool ancestor_has(const struct bomber *b, const struct turret *t);
+const struct bomber *mod_ancestor(const struct bomber *b);
+void count_crew(const struct crew *c, unsigned int *v);
 
 void init_bomber(struct bomber *b, struct manf *m, struct engine *e);
 int calc_bomber(struct bomber *b, struct tech_numbers *tn);

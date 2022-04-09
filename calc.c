@@ -53,6 +53,13 @@ static void design_warning(struct bomber *b, const char *format, ...)
 	}
 }
 
+const struct bomber *mod_ancestor(const struct bomber *b)
+{
+	if (!b->parent || b->refit < REFIT_MOD)
+		return b;
+	return mod_ancestor(b->parent);
+}
+
 static int calc_engines(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
@@ -62,6 +69,15 @@ static int calc_engines(struct bomber *b)
 
 	if (!e->typ->unlocked)
 		design_error(b, "%s not developed yet!\n", e->typ->name);
+	if (b->refit >= REFIT_MOD && e->typ != b->parent->engines.typ)
+		design_error(b, "Engines changed in %s refit!\n",
+			     describe_refit(b->refit));
+	if (b->refit && e->number != b->parent->engines.number)
+		design_error(b, "Engine count changed in %s refit!\n",
+			     describe_refit(b->refit));
+	if (b->refit >= REFIT_MOD && e->egg != b->parent->engines.egg)
+		design_error(b, "Power Egg changed in %s refit!\n",
+			     describe_refit(b->refit));
 	e->odd = e->number & 1;
 	e->manumatch = b->manf->eman && !strcmp(e->typ->manu, b->manf->eman);
 	if (e->egg) {
@@ -102,15 +118,6 @@ static int calc_engines(struct bomber *b)
 	return 0;
 }
 
-bool ancestor_has(const struct bomber *b, const struct turret *t)
-{
-	if (!b->parent || b->refit < REFIT_MOD)
-		return false;
-	if (b->parent->turrets.typ[t->lxn] == t)
-		return true;
-	return ancestor_has(b->parent, t);
-}
-
 static int gcr[GC_COUNT] = {
 	[GC_FRONT] = 1,
 	[GC_BEAM_HIGH] = 2,
@@ -142,6 +149,9 @@ static int calc_turrets(struct bomber *b)
 
 		if (!g)
 			continue;
+		if (!mod_ancestor(b)->turrets.typ[i])
+			design_error(b, "%s added in %s refit!\n", g->name,
+				     describe_refit(b->refit));
 		if (!g->unlocked)
 			design_error(b, "%s not developed yet!\n", g->name);
 		if (g->slb && b->fuse.typ != FT_SLABBY)
@@ -175,6 +185,12 @@ static int calc_wing(struct bomber *b)
 	struct wing *w = &b->wing;
 	float arpen, epen;
 
+	if (b->refit && w->area != b->parent->wing.area)
+		design_error(b, "Wing area changed in %s refit!\n",
+			     describe_refit(b->refit));
+	if (b->refit && w->art != b->parent->wing.art)
+		design_error(b, "Wing aspect ratio changed in %s refit!\n",
+			     describe_refit(b->refit));
 	w->ar = w->art / 10.0f;
 	/* Make sure there's no risk of calculations blowing up */
 	if (w->ar < 1.0) {
@@ -220,26 +236,44 @@ const char *crew_name(enum crewpos c)
 	}
 }
 
+void count_crew(const struct crew *c, unsigned int *v)
+{
+	memset(v, 0, sizeof(*v) * CREW_CLASSES);
+	unsigned int i;
+
+	for (i = 0; i < c->n; i++)
+		v[c->men[i].pos]++;
+}
+
 static int calc_crew(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
+	unsigned int pcount[CREW_CLASSES];
+	unsigned int count[CREW_CLASSES];
+	const struct crew *pc = NULL;
 	struct crew *c = &b->crew;
 	unsigned int i, j;
 
+	count_crew(c, count);
+	pc = &mod_ancestor(b)->crew;
+	if (b->refit >= REFIT_MOD) {
+		count_crew(pc, pcount);
+		for (i = 0; i < CREW_CLASSES; i++)
+			if (count[i] > pcount[i])
+				design_error(b, "%s%s added in %s refit!\n",
+					     crew_name(i),
+					     count[i] > pcount[i] + 1 ? "s" : "",
+					     describe_refit(b->refit));
+	}
 	c->gunners = 0;
-	c->pilot = c->nav = false;
 	c->dc = 0;
 	c->bn = 0;
 	memset(b->turrets.gas, 0, sizeof(b->turrets.gas));
 	for (i = 0; i < c->n; i++) {
 		struct crewman *m = c->men + i;
 
-		if (m->pos == CCLASS_P)
-			c->pilot = true;
-		if (m->pos == CCLASS_N) {
-			c->nav = true;
+		if (m->pos == CCLASS_N)
 			c->bn += m->gun ? 0.75f : 1.0f;
-		}
 		if (m->pos == CCLASS_B)
 			c->bn += m->gun ? 0.45f : 0.6f;
 		if (m->pos == CCLASS_G) {
@@ -284,10 +318,8 @@ static int calc_crew(struct bomber *b)
 						       crew_name(m->pos));
 			}
 		}
-		if (m->pos == CCLASS_E) {
-			c->engineers++;
+		if (m->pos == CCLASS_E)
 			c->dc += m->gun ? 0.75f : 1.0f;
-		}
 		if (m->pos == CCLASS_W) {
 			c->dc += m->gun ? 0.45f : 0.6f;
 			/* Radionavigation by pre-GEE methods,
@@ -297,11 +329,13 @@ static int calc_crew(struct bomber *b)
 				c->bn += m->gun ? 0.15f : 0.2f;
 		}
 	}
-	if (!c->pilot)
+	if (!count[CCLASS_P])
 		design_error(b, "Crew must include a pilot!\n");
-	if (!c->nav)
+	if (!count[CCLASS_N])
 		design_error(b, "Crew must include a navigator!\n");
-	c->tare = c->n * tn->cmi;
+	c->engineers = count[CCLASS_E];
+	/* Removing crew in a mod doesn't save their cmi */
+	c->tare = pc->n * tn->cmi;
 	c->gross = c->n * 168;
 	if (c->gunners < b->turrets.need_gunners)
 		design_warning(b, "Fewer gunners than turrets, defence will be weakened.\n");
@@ -316,6 +350,12 @@ static int calc_bombbay(struct bomber *b)
 	struct bombbay *a = &b->bay;
 	unsigned int bbb;
 
+	if (b->refit && a->cap != b->parent->bay.cap)
+		design_error(b, "Bombbay capacity changed in %s refit!\n",
+			     describe_refit(b->refit));
+	if (b->refit && a->girth != b->parent->bay.girth)
+		design_error(b, "Bombbay girth changed in %s refit!\n",
+			     describe_refit(b->refit));
 	if (a->girth < 0 || a->girth >= BB_COUNT) { /* can't happen */
 		design_error(b, "Nonexistent bombbay girth!\n");
 		return -EINVAL;
@@ -345,6 +385,9 @@ static int calc_fuselage(struct bomber *b)
 	const struct tech_numbers *tn = &b->tn;
 	struct fuselage *f = &b->fuse;
 
+	if (b->refit && f->typ != b->parent->fuse.typ)
+		design_error(b, "Fuselage type changed in %s refit!\n",
+			     describe_refit(b->refit));
 	/* First need core_tare, as input to fuse_tare */
 	b->core_tare = (b->turrets.tare + b->crew.tare + b->bay.tare) *
 		       b->manf->act / 100.0f;
@@ -354,13 +397,17 @@ static int calc_fuselage(struct bomber *b)
 	}
 	if (f->typ == FT_GEODETIC && !b->manf->geo)
 		design_error(b, "This manufacturer cannot design geodetics!\n");
-	f->tare = b->core_tare * (tn->ft[f->typ] / 100.0f) *
+	/* In a MOD the fuselage is sized to the old core_tare;
+	 * if this makes it too small, penalise other stats slightly
+	 */
+	f->tare = mod_ancestor(b)->core_tare * (tn->ft[f->typ] / 100.0f) *
 		  b->manf->ft[f->typ] / 100.0f;
-	f->serv = tn->fs[f->typ] / 1000.0f;
-	f->fail = tn->ff[f->typ] / 1000.0f;
-	f->cost = f->tare * 1.2f * (b->manf->acc / 100.0f) *
+	f->cram = max(b->core_tare / mod_ancestor(b)->core_tare, 1.0f);
+	f->serv = tn->fs[f->typ] * f->cram / 1000.0f;
+	f->fail = tn->ff[f->typ] * f->cram / 1000.0f;
+	f->cost = f->tare * f->cram * 1.2f * (b->manf->acc / 100.0f) *
 		  (tn->fc[f->typ] / 100.0f);
-	f->vuln = tn->fv[f->typ] / 100.0f;
+	f->vuln = tn->fv[f->typ] * f->cram / 100.0f;
 	/* drag needs b->tare, fill in later */
 	return 0;
 }
@@ -375,12 +422,15 @@ static int calc_electrics(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
 	struct electrics *e = &b->elec;
-	float ncost = 0.0f;
 	unsigned int i;
 
+	if (b->refit >= REFIT_MOD && e->esl != b->parent->elec.esl)
+		design_error(b, "Electric supply changed in %s refit!\n",
+			     describe_refit(b->refit));
 	if (e->esl > tn->esl)
 		design_error(b, "Electrics %s not developed yet!\n",
 			     describe_esl(e->esl));
+	e->ncost = 0.0f;
 	for (i = 0; i < NA_COUNT; i++)
 		if (e->navaid[i]) {
 			if (!tn->na[i])
@@ -389,7 +439,7 @@ static int calc_electrics(struct bomber *b)
 			else if (e->esl < (i == NA_GEE ? ESL_HIGH : ESL_STABLE))
 				design_error(b, "Navaid %s requires better electrics!\n",
 					     describe_navaid(i));
-			ncost += nacost[i];
+			e->ncost += nacost[i];
 		}
 	if (b->turrets.typ[LXN_VENTRAL] && e->navaid[NA_H2S])
 		design_error(b, "H₂S conflicts with turret in ventral position!\n");
@@ -411,7 +461,6 @@ static int calc_electrics(struct bomber *b)
 		design_error(b, "Nonexistent electric supply level!\n");
 		return -EINVAL;
 	}
-	e->cost += ncost;
 	return 0;
 }
 
@@ -420,6 +469,9 @@ static int calc_tanks(struct bomber *b)
 	const struct tech_numbers *tn = &b->tn;
 	struct tanks *t = &b->tanks;
 
+	if (b->refit >= REFIT_MOD && t->ht != b->parent->tanks.ht)
+		design_error(b, "Fuel capacity changed in %s refit!\n",
+			     describe_refit(b->refit));
 	t->hours = t->ht / 10.0f;
 	t->mass = b->engines.fuelrate * t->hours;
 	t->tare = t->mass * (tn->fut / 1000.0f);
@@ -557,7 +609,7 @@ static int calc_perf(struct bomber *b)
 			max(b->ceiling - 10.0f, 0) / 2.0f;
 	b->cruise_spd = airspeed(b, b->cruise_alt);
 	b->init_climb = climb_rate(b, 0.0f);
-	if (b->init_climb < 400.0f)
+	if (b->init_climb < 540.0f)
 		design_error(b, "Design can barely take off!\n");
 	else if (b->init_climb < 640.0f)
 		design_warning(b, "Climb rate is very slow.\n");
@@ -630,22 +682,97 @@ static int calc_cost(struct bomber *b)
 		       (b->engines.number > 2 ? 2.0f : 1.0f);
 	b->cost = b->engines.cost + b->turrets.cost + b->core_cost +
 		  b->bay.cost + b->fuse.cost + b->wing.cost +
-		  b->elec.cost + b->tanks.cost;
+		  b->elec.cost + b->elec.ncost + b->tanks.cost;
 	return 0;
 }
 
 static int calc_dev(struct bomber *b)
 {
-	b->tproto = powf(b->gross, 0.3) * powf(b->cost, 0.2) *
-		    100.0f / max(b->manf->bof, 1);
-	b->tprod = powf(b->gross, 0.4) * powf(b->cost, 0.2) *
-		   60.0f / max(b->manf->bof, 1);
-	b->cproto = b->cost * 15.0f;
-	b->cprod = b->cost * 30.0f;
+	float base_tproto = powf(b->gross, 0.3f) * powf(b->cost, 0.2f);
+	float base_tprod = powf(b->gross, 0.4f) * powf(b->cost, 0.2f);
+	float add_tproto = 0.0f, add_tprod = 0.0f;
+	unsigned int pcount[CREW_CLASSES];
+	unsigned int count[CREW_CLASSES];
+	float bof = max(b->manf->bof, 1);
+	unsigned int i;
+
+	count_crew(&b->crew, count);
+	switch (b->refit) {
+	case REFIT_FRESH:
+		b->tproto = base_tproto * 100.0f / bof;
+		b->tprod = base_tprod * 60.0f / bof;
+		b->cproto = b->cost * 15.0f;
+		b->cprod = b->cost * 30.0f;
+		break;
+	case REFIT_MARK:
+		b->tproto = base_tproto * 10.0f / bof;
+		b->tprod = base_tprod * 6.0f / bof;
+		b->cproto = b->cost * 1.5f;
+		b->cprod = b->cost * 3.0f;
+		if (b->engines.typ != b->parent->engines.typ) {
+			add_tproto += powf(b->engines.tare, 0.6f) *
+				      powf(b->engines.cost, 0.4f) * 0.6f;
+			add_tprod += powf(b->engines.tare, 0.8f) *
+				    powf(b->engines.cost, 0.4f) * 0.32f;
+		}
+		for (i = LXN_NOSE; i < LXN_COUNT; i++)
+			if (b->turrets.typ[i] != b->parent->turrets.typ[i]) {
+				const struct turret *t = b->turrets.typ[i];
+				const struct turret *p = b->parent->turrets.typ[i];
+
+				if (t) {
+					/* turret added or replaced */
+					add_tproto += powf(t->twt, 0.6f);
+					add_tprod += powf(t->twt, 0.8f) * 0.6f;
+				} else {
+					/* turret removed */
+					add_tproto += powf(p->twt, 0.6f) * 0.2f;
+					add_tprod += powf(p->twt, 0.8f) * 0.12f;
+				}
+			}
+		count_crew(&b->parent->crew, pcount);
+		for (i = 0; i < CREW_CLASSES; i++) {
+			unsigned int delta = max(count[i] - pcount[i], 0);
+
+			add_tproto += 8 * delta;
+			add_tprod += 9 * delta;
+		}
+		if (b->bay.csbs && !b->parent->bay.csbs) {
+			add_tproto += 4;
+			add_tprod += 4;
+		}
+		if (b->elec.esl > b->parent->elec.esl) {
+			add_tproto += b->elec.cost * 5.0f;
+			add_tprod += b->elec.cost * 7.0f;
+		}
+		if (b->tanks.mass > b->parent->tanks.mass) {
+			add_tproto += b->tanks.cost * 0.5f;
+			add_tprod += b->tanks.cost * 0.8f;
+		}
+		b->tproto += sqrt(add_tproto);
+		b->tprod += sqrt(add_tprod);
+		b->cproto += add_tproto;
+		b->cprod += add_tprod;
+		break;
+	case REFIT_MOD:
+		b->tproto = base_tproto * 7.0f / bof;
+		b->tprod = base_tprod * 7.0f / bof;
+		b->cproto = b->cost * 0.9f;
+		b->cprod = b->cost * 1.2f;
+		break;
+	case REFIT_DOCTRINE:
+		/* It costs nothing to change your doctrine */
+		b->tproto = b->tprod = 0.0f;
+		b->cproto = b->cprod = 0.0f;
+		break;
+	default:
+		design_error(b, "Unknown refit level %d\n", b->refit);
+		return -EINVAL;
+	}
 	return 0;
 }
 
-static int check_refit(struct bomber *b, struct tech_numbers *tn)
+static int calc_refit(struct bomber *b, struct tech_numbers *tn)
 {
 	size_t start;
 
@@ -663,7 +790,7 @@ static int check_refit(struct bomber *b, struct tech_numbers *tn)
 		start = offsetof(struct tech_numbers, mark_block);
 		break;
 	case REFIT_MOD:
-		start = offsetof(struct tech_numbers, refit_block);
+		start = offsetof(struct tech_numbers, mod_block);
 		break;
 	case REFIT_DOCTRINE:
 		start = offsetof(struct tech_numbers, doctrine_block);
@@ -685,10 +812,9 @@ int calc_bomber(struct bomber *b, struct tech_numbers *tn)
 	b->error = false;
 	b->new = 0;
 
-	rc = check_refit(b, tn);
+	rc = calc_refit(b, tn);
 	if (rc)
 		return rc;
-	tn = &b->tn;
 
 	rc = calc_engines(b);
 	if (rc)

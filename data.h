@@ -105,7 +105,7 @@ enum nav_aid {
 
 struct tech_numbers {
 	/* These MUST all be `unsigned int`!  Copying code assumes this. */
-	/* Core block.  Cannot change even in marks. */
+	/* Core block.  Cannot change even in MERK refits. */
 	unsigned int fwt; // Fuse Wing Tare * 100
 	// Wings
 	unsigned int wts; // Wing Tare Span exponent * 100
@@ -118,7 +118,7 @@ struct tech_numbers {
 	unsigned int bt[BB_COUNT]; // Bay Tare factor * 1000
 	unsigned int bbb; // Bay Bigfactor Base / 1000lb
 	unsigned int bbf; // Bay Bigfactor Frac / 1e5
-	/* Mark block.  Cannot change in refits. */
+	/* MARK block.  Cannot change in MOD refits. */
 	unsigned int mark_block[0];
 	unsigned int ft[FT_COUNT]; // Fuse Tare * 100
 	unsigned int fd[FT_COUNT]; // Fuse Drag * 10
@@ -149,8 +149,8 @@ struct tech_numbers {
 	unsigned int gcf; // Gun Cost Factor * 100
 	// Equipment
 	unsigned int esl; // Electric Supply Level (enum elec_level)
-	/* Refit block. */
-	unsigned int refit_block[0];
+	/* MOD block.  Cannot change in DOCTRINE refits. */
+	unsigned int mod_block[0];
 	// Fuel Tanks, Self Sealing
 	unsigned int sft; // SST Tare scaling * 100
 	unsigned int sfv; // SST Vuln scaling * 100

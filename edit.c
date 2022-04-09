@@ -84,7 +84,7 @@ const char *describe_navaid(enum nav_aid na)
 	}
 }
 
-static const char *describe_refit(enum refit_level refit)
+const char *describe_refit(enum refit_level refit)
 {
 	switch (refit) {
 	case REFIT_FRESH:
@@ -371,6 +371,11 @@ static bool gun_conflict(const struct bomber *b, const struct turret *t)
 	return b->turrets.typ[t->lxn] != NULL;
 }
 
+static bool ancestor_has_gun(const struct bomber *b, const struct turret *t)
+{
+	return mod_ancestor(b)->turrets.typ[t->lxn];
+}
+
 static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 		     const struct entities *ent)
 {
@@ -378,7 +383,7 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 	int c;
 
 	/* Mark can freely alter turrets.
-	 * Mod can remove turrets, or restore turrets from ancestor mods
+	 * Mod can remove turrets, or restore turret slots from ancestor mods
 	 * (but not from ancestor marks).
 	 * Doctrine can't alter turrets at all.
 	 */
@@ -392,8 +397,8 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 	for (i = 0; i < ent->ngun; i++)
 		if (ent->gun[i]->unlocked &&
 		    !gun_conflict(b, ent->gun[i]) &&
-		    (b->refit <= REFIT_MARK ||
-		     ancestor_has(b, ent->gun[i])))
+		    (b->refit < REFIT_MOD ||
+		     ancestor_has_gun(b, ent->gun[i])))
 			printf("[%c] %s\n", i + 'A', ent->gun[i]->name);
 	for (i = LXN_NOSE; i < LXN_COUNT; i++)
 		if (b->turrets.typ[i])
@@ -426,7 +431,7 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 		if (i < 0 || i >= ent->ngun || !ent->gun[i]->unlocked ||
 		    gun_conflict(b, ent->gun[i]) ||
 		    (b->refit > REFIT_MARK &&
-		     !ancestor_has(b, ent->gun[i]))) {
+		     !ancestor_has_gun(b, ent->gun[i]))) {
 			putchar('?');
 			continue;
 		}
@@ -524,16 +529,43 @@ static int edit_wing(struct bomber *b)
 
 static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 {
+	unsigned int pcount[CREW_CLASSES];
+	unsigned int count[CREW_CLASSES];
+	bool can_add[CREW_CLASSES];
+	unsigned int on = 0;
 	struct crewman *m;
 	enum crewpos pos;
 	bool gun = false;
 	unsigned int i;
+	char opts[7];
 	int c;
 
-	if (b->refit >= REFIT_DOCTRINE)
-		printf(">*num to toggle gunner, or 0 to cancel\n");
-	else
-		printf(">[PNBWEG] to add crew, number to remove, *num to toggle gunner, or 0 to cancel\n");
+	if (b->refit >= REFIT_MOD) {
+		count_crew(&b->parent->crew, pcount);
+		count_crew(&b->crew, count);
+	}
+
+	for (i = 0; i < CREW_CLASSES; i++) {
+		if (b->refit >= REFIT_DOCTRINE) {
+			can_add[i] = false;
+		} else if (b->refit >= REFIT_MOD) {
+			can_add[i] = count[i] < pcount[i];
+		} else {
+			can_add[i] = true;
+		}
+		if (can_add[i])
+			opts[on++] = crew_to_letter(i);
+	}
+	if (on) {
+		opts[on++] = 0;
+		printf(">[%s] to add crew, number to remove, *num to toggle gunner, or 0 to cancel\n",
+		       opts);
+	} else {
+		if (b->refit >= REFIT_DOCTRINE)
+			printf(">*num to toggle gunner, or 0 to cancel\n");
+		else
+			printf(">Number to remove crew, *num to toggle gunner, or 0 to cancel\n");
+	}
 	do {
 		c = getchar();
 		if (c == EOF)
@@ -576,7 +608,7 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 		}
 		pos = letter_to_crew(c);
 		if (b->crew.n < MAX_CREW && pos < CREW_CLASSES &&
-		    b->refit < REFIT_DOCTRINE) {
+		    can_add[pos]) {
 			m = &b->crew.men[b->crew.n++];
 			m->pos = pos;
 			m->gun = false;
@@ -1098,16 +1130,19 @@ static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
 		case 'k':
 		case 'K':
 			b2.refit = REFIT_MARK;
+			calc_bomber(&b2, &tn2);
 			putchar('>');
 			return edit_loop(&b2, &tn2, ent);
 		case 'o':
 		case 'O':
 			b2.refit = REFIT_MOD;
+			calc_bomber(&b2, &tn2);
 			putchar('>');
 			return edit_loop(&b2, &tn2, ent);
 		case 'd':
 		case 'D':
 			b2.refit = REFIT_DOCTRINE;
+			calc_bomber(&b2, &tn2);
 			putchar('>');
 			return edit_loop(&b2, &tn2, ent);
 		default:

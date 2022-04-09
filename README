@@ -179,13 +179,15 @@ The following cannot be changed in refits:
 The following changes can be made in marks but not mods:
 * change Engine type
 * add new Turrets
+* add new Crew
 * change eLectric supply level
 * change fUel capacity
 
 The following changes can be made even in mods:
 * remove Turrets
-* re-add Turrets that were removed by a previous mod to this mark
-* add or remove Crew
+* add Turrets to slots that were originally used on this mark
+* remove Crew
+* re-add Crew that were originally present on this mark
 * change Bombsight
 * add or remove Navaids
 * toggle fUel tanks Self-sealing
