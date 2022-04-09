@@ -136,10 +136,13 @@ The Course-Setting bomb sight improves bombing accuracy significantly.
  level 3 'stable voltage supply'.  Higher-level electric systems increase
  cost, particularly for aircraft with few engines; the combination of level
  3 electrics with a slender fuselage incurs an additional cost penalty.
+ Alternatively, the [N]avaid sub-mode lets you add (letters) or remove
+ (numbers) navaids, which have special nonlinear effects in-game on
+ navigational accuracy.
 
-[U] is used to set the fuel capacity in tenths of an hour; alternatively
- enter 1 to disable self-sealing tanks, 2 to enable them, or 0 to leave the
- mode without making changes.
+[U] has a sub-mode [U] to set the fuel capacity in tenths of an hour;
+ alternatively select [R]egular or [S]elf-sealing tanks, or press 0 to
+ leave the mode without making changes.
 Self-sealing fuel tanks greatly reduce vulnerability, though increase tare
  weight and cost.
 
@@ -154,3 +157,38 @@ Techs have an approximate year (though in-game they may unlock sooner or
  techs up to that year and lock all later techs.  Year 2 techs are
  available from the start of the game, but not available for the bulk of
  the legacy fleet if you choose to design that (exact gameplay TBD).
+
+REFIT SYSTEM
+
+[K] starts the process of developing a refit of the current design.  Any
+ changes made to the design (or to the technology state) will be undone
+ upon leaving the refit (for which press [J]).
+You can develop a new design based on an existing one ("mar[K]"), which
+ reduces development time and cost relative to a clean-sheet design, or
+ devise alterations to existing airframes ("m[O]d") which can be applied
+ (gradually) to your fleet.  Or explore the effect of changing [D]octrine
+ on otherwise unaltered aircraft.
+
+The following cannot be changed in refits:
+* Manufacturer
+* number of Engines
+* Wing
+* Bomb Bay capacity or Girth
+* Fuselage type
+
+The following changes can be made in marks but not mods:
+* change Engine type
+* add new Turrets
+* change eLectric supply level
+* change fUel capacity
+
+The following changes can be made even in mods:
+* remove Turrets
+* re-add Turrets that were removed by a previous mod to this mark
+* add or remove Crew
+* change Bombsight
+* add or remove Navaids
+* toggle fUel tanks Self-sealing
+
+The following can be changed through doctrine:
+* dual-rôling of crewmen

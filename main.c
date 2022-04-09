@@ -100,7 +100,7 @@ int main(void)
 	}
 	fprintf(stderr, "Prepared blank bomber\n");
 
-	edit_loop(&b, &tn, &entities);
+	editor(&b, &tn, &entities);
 
 	fprintf(stderr, "Cleaning up...\n");
 	free_techs(&techs);

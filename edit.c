@@ -84,6 +84,23 @@ const char *describe_navaid(enum nav_aid na)
 	}
 }
 
+static const char *describe_refit(enum refit_level refit)
+{
+	switch (refit) {
+	case REFIT_FRESH:
+		return "Clean-sheet";
+	case REFIT_MARK:
+		return "Mark";
+	case REFIT_MOD:
+		return "Mod";
+	case REFIT_DOCTRINE:
+		return "Doctrine";
+	default:
+		return "error!  unknown refit";
+	}
+}
+
+
 static char crew_to_letter(enum crewpos c)
 {
 	switch (c) {
@@ -204,6 +221,10 @@ static void dump_bomber_info(struct bomber *b)
 	dump_bay_fuse(b);
 	dump_elec_fuel(b);
 
+	if (b->refit)
+		printf("Design is a %s refit; changes limited.\n",
+		       describe_refit(b->refit));
+
 	if (b->error)
 		printf("Design contains errors!  Please review [X].\n");
 	else if (b->new)
@@ -257,6 +278,11 @@ static int edit_manf(struct bomber *b, struct tech_numbers *tn,
 	unsigned int i;
 	int c;
 
+	if (b->refit) {
+		fprintf(stderr, "Cannot change manufacturer on refit!\n");
+		return -EINVAL;
+	}
+
 	printf(">Select manufacturer (0 to cancel)\n");
 	for (i = 0; i < ent->nmanf; i++)
 		printf("[%c] %s\n", i + '1', ent->manf[i]->name);
@@ -290,7 +316,15 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 	unsigned int i;
 	int c;
 
-	printf(">Select engine (0 to cancel) or number\n");
+	if (b->refit >= REFIT_MOD) {
+		fprintf(stderr, "%s refit cannot change engines.\n", describe_refit(b->refit));
+		return -EINVAL;
+	} else if (b->refit) {
+		/* Mark can change type but not number */
+		printf(">Select engine (0 to cancel)\n");
+	} else {
+		printf(">Select engine (0 to cancel) or number\n");
+	}
 	for (i = 0; i < ent->neng; i++)
 		if (ent->eng[i]->unlocked)
 			printf("[%c] %s %s\n", i + 'A', ent->eng[i]->manu,
@@ -306,7 +340,7 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 		}
 
 		i = c - '0';
-		if (i >= 1 && i < 9) {
+		if (i >= 1 && i < 9 && !b->refit) {
 			b->engines.number = i;
 			putchar('>');
 			dump_engines(b);
@@ -343,9 +377,23 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 	unsigned int i;
 	int c;
 
+	/* Mark can freely alter turrets.
+	 * Mod can remove turrets, or restore turrets from ancestor mods
+	 * (but not from ancestor marks).
+	 * Doctrine can't alter turrets at all.
+	 */
+
+	if (b->refit >= REFIT_DOCTRINE) {
+		fprintf(stderr, "%s refit cannot change turrets.\n", describe_refit(b->refit));
+		return -EINVAL;
+	}
+
 	printf(">Select turret to add, number to remove, or 0 to cancel\n");
 	for (i = 0; i < ent->ngun; i++)
-		if (ent->gun[i]->unlocked && !gun_conflict(b, ent->gun[i]))
+		if (ent->gun[i]->unlocked &&
+		    !gun_conflict(b, ent->gun[i]) &&
+		    (b->refit <= REFIT_MARK ||
+		     ancestor_has(b, ent->gun[i])))
 			printf("[%c] %s\n", i + 'A', ent->gun[i]->name);
 	for (i = LXN_NOSE; i < LXN_COUNT; i++)
 		if (b->turrets.typ[i])
@@ -376,7 +424,9 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 		}
 		i = c - 'A';
 		if (i < 0 || i >= ent->ngun || !ent->gun[i]->unlocked ||
-		    gun_conflict(b, ent->gun[i])) {
+		    gun_conflict(b, ent->gun[i]) ||
+		    (b->refit > REFIT_MARK &&
+		     !ancestor_has(b, ent->gun[i]))) {
 			putchar('?');
 			continue;
 		}
@@ -445,6 +495,11 @@ static int edit_wing(struct bomber *b)
 {
 	int c;
 
+	if (b->refit) {
+		fprintf(stderr, "Refit cannot change wing design.\n");
+		return -EINVAL;
+	}
+
 	printf(">Edit [A]rea or aspect [R]atio (0 to cancel)\n");
 	do {
 		c = getchar();
@@ -475,7 +530,10 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 	unsigned int i;
 	int c;
 
-	printf(">[PNBWEG] to add crew, number to remove, *num to toggle gunner, or 0 to cancel\n");
+	if (b->refit >= REFIT_DOCTRINE)
+		printf(">*num to toggle gunner, or 0 to cancel\n");
+	else
+		printf(">[PNBWEG] to add crew, number to remove, *num to toggle gunner, or 0 to cancel\n");
 	do {
 		c = getchar();
 		if (c == EOF)
@@ -485,7 +543,7 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 			return 0;
 		}
 
-		if (c == 'Z') {
+		if (c == 'Z' && b->refit < REFIT_DOCTRINE) {
 			b->crew.n = 0;
 			putchar('>');
 			dump_wing_crew(b);
@@ -507,7 +565,7 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 					dump_wing_crew(b);
 					return 0;
 				}
-			} else if (b->crew.n) {
+			} else if (b->crew.n && b->refit < REFIT_DOCTRINE) {
 				for (; ++i < b->crew.n;)
 					b->crew.men[i - 1] = b->crew.men[i];
 				b->crew.n--;
@@ -517,16 +575,16 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 			}
 		}
 		pos = letter_to_crew(c);
-		if (b->crew.n >= MAX_CREW || pos >= CREW_CLASSES) {
-			putchar('?');
-			continue;
+		if (b->crew.n < MAX_CREW && pos < CREW_CLASSES &&
+		    b->refit < REFIT_DOCTRINE) {
+			m = &b->crew.men[b->crew.n++];
+			m->pos = pos;
+			m->gun = false;
+			putchar('>');
+			dump_wing_crew(b);
+			return 0;
 		}
-		m = &b->crew.men[b->crew.n++];
-		m->pos = pos;
-		m->gun = false;
-		putchar('>');
-		dump_wing_crew(b);
-		return 0;
+		putchar('?');
 	} while (1);
 
 	return -EIO;
@@ -604,10 +662,21 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 {
 	int c;
 
-	if (tn->csb)
+	if (b->refit >= REFIT_DOCTRINE) {
+		fprintf(stderr, "%s refit cannot change bombbay or sight.\n", describe_refit(b->refit));
+		return -EINVAL;
+	}
+	if (b->refit) {
+		if (!tn->csb) {
+			fprintf(stderr, "%s refit cannot change bombbay.\n", describe_refit(b->refit));
+			return -EINVAL;
+		}
+		printf(">[R]egular or [C]S bomb sight, or 0 to cancel\n");
+	} else if (tn->csb) {
 		printf(">[B]omb capacity, [G]irth, [R]egular or [C]S bomb sight, or 0 to cancel\n");
-	else
+	} else {
 		printf(">[B]omb capacity, [G]irth, or 0 to cancel\n");
+	}
 	do {
 		c = getchar();
 		if (c == EOF)
@@ -620,10 +689,14 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 		switch (c) {
 		case 'b':
 		case 'B':
-			return edit_cap(b);
+			if (!b->refit)
+				return edit_cap(b);
+			break;
 		case 'g':
 		case 'G':
-			return edit_girth(b, tn);
+			if (!b->refit)
+				return edit_girth(b, tn);
+			break;
 		case 'r':
 		case 'R':
 			b->bay.csbs = false;
@@ -652,6 +725,11 @@ static int edit_fuse(struct bomber *b, struct tech_numbers *tn)
 {
 	unsigned int i;
 	int c;
+
+	if (b->refit) {
+		fprintf(stderr, "%s refit cannot change fuselage type.\n", describe_refit(b->refit));
+		return -EINVAL;
+	}
 
 	printf(">Select fuselage type, or 0 to cancel\n");
 	for (i = 0; i < FT_COUNT; i++)
@@ -686,6 +764,11 @@ static int edit_nav(struct bomber *b, struct tech_numbers *tn)
 {
 	unsigned int i;
 	int c;
+
+	if (b->refit >= REFIT_DOCTRINE) {
+		fprintf(stderr, "%s refit cannot change navaids.\n", describe_refit(b->refit));
+		return -EINVAL;
+	}
 
 	printf(">Select navaid letter to add, number to remove, or 0 to cancel\n");
 	for (i = 0; i < NA_COUNT; i++)
@@ -736,10 +819,18 @@ static int edit_elec(struct bomber *b, struct tech_numbers *tn)
 	unsigned int i;
 	int c;
 
-	printf(">Select electrics level, edit [N]avaids, or 0 to cancel\n");
-	for (i = 0; i < ESL_COUNT; i++)
-		if (i <= tn->esl)
-			printf("[%c] %s\n", i + '1', describe_esl(i));
+	if (b->refit >= REFIT_DOCTRINE) {
+		fprintf(stderr, "%s refit cannot change electrics.\n", describe_refit(b->refit));
+		return -EINVAL;
+	}
+	if (b->refit >= REFIT_MOD) {
+		printf(">Edit [N]avaids, or 0 to cancel\n");
+	} else {
+		printf(">Select electrics level, edit [N]avaids, or 0 to cancel\n");
+		for (i = 0; i < ESL_COUNT; i++)
+			if (i <= tn->esl)
+				printf("[%c] %s\n", i + '1', describe_esl(i));
+	}
 
 	do {
 		c = getchar();
@@ -754,20 +845,19 @@ static int edit_elec(struct bomber *b, struct tech_numbers *tn)
 			return edit_nav(b, tn);
 		}
 		i = c - '1';
-		if (i < 0 || i >= ESL_COUNT || i > tn->esl) {
-			putchar('?');
-			continue;
+		if (i < ESL_COUNT && i <= tn->esl && b->refit < REFIT_MOD) {
+			b->elec.esl = i;
+			putchar('>');
+			dump_elec_fuel(b);
+			return 0;
 		}
-		b->elec.esl = i;
-		putchar('>');
-		dump_elec_fuel(b);
-		return 0;
+		putchar('?');
 	} while (1);
 
 	return -EIO;
 }
 
-static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
+static int edit_fuel(struct bomber *b)
 {
 	unsigned int v;
 	int rc;
@@ -777,32 +867,75 @@ static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
 		if (rc == -EIO)
 			return rc;
 		if (rc)
-			printf("Enter fuel in tenths hours, 1 or 2 to dis/enable self-sealing, or 0 to cancel\n");
+			printf("Enter fuel in tenths hours, or 0 to cancel\n");
 	} while (rc);
-	if (v == 1) {
-		b->tanks.sst = false;
-		putchar('>');
-		dump_elec_fuel(b);
-		return 0;
-	}
-	if (v == 2) {
-		if (b->tanks.sst)
-			return 0;
-		if (tn->sft) {
-			b->tanks.sst = true;
-			putchar('>');
-			dump_elec_fuel(b);
-			return 0;
-		}
-		fprintf(stderr, "Self sealing tanks not developed yet!\n");
-		return -EINVAL;
-	}
+
 	if (v) {
 		b->tanks.ht = v;
 		putchar('>');
 		dump_elec_fuel(b);
 	}
 	return 0;
+}
+
+static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
+{
+	int c;
+
+	if (b->refit >= REFIT_DOCTRINE) {
+		fprintf(stderr, "%s refit cannot change fuel.\n", describe_refit(b->refit));
+		return -EINVAL;
+	}
+	if (b->refit >= REFIT_MOD) {
+		if (!tn->sft) {
+			fprintf(stderr, "%s refit cannot change fuel.\n", describe_refit(b->refit));
+			return -EINVAL;
+		}
+		printf(">[R]egular or [S]elf-sealing, or 0 to cancel\n");
+	} else if (tn->sft) {
+		printf(">f[U]el capacity, [R]egular or [S]elf-sealing, or 0 to cancel\n");
+	} else {
+		printf(">f[U]el capacity, or 0 to cancel\n");
+	}
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		switch (c) {
+		case 'u':
+		case 'U':
+			if (b->refit < REFIT_MOD)
+				return edit_fuel(b);
+			break;
+		case 'r':
+		case 'R':
+			b->tanks.sst = false;
+			putchar('>');
+			dump_elec_fuel(b);
+			return 0;
+		case 's':
+		case 'S':
+			if (tn->sft) {
+				b->tanks.sst = true;
+				putchar('>');
+				dump_elec_fuel(b);
+				return 0;
+			}
+			fprintf(stderr, "Self sealing tanks not developed yet!\n");
+			return -EINVAL;
+		default:
+			break;
+		}
+		putchar('?');
+	} while (1);
+
+	return -EIO;
 }
 
 static int dump_block(struct bomber *b, const struct entities *ent)
@@ -852,8 +985,8 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 		return -EINVAL;
 	}
 	printf("B%c", b->bay.csbs ? 'C' : 'R');
-	printf("U%u\n", b->tanks.ht);
-	printf("U%u\n", b->tanks.sst ? 2 : 1);
+	printf("U%c", b->tanks.sst ? 'S' : 'R');
+	printf("UU%u\n", b->tanks.ht);
 	return 0;
 }
 
@@ -939,19 +1072,60 @@ static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
 	return -EIO;
 }
 
-int edit_loop(struct bomber *b, struct tech_numbers *tn,
-	      const struct entities *ent)
+static int edit_loop(struct bomber *b, struct tech_numbers *tn,
+		     const struct entities *ent);
+
+static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
+		      const struct entities *ent)
+{
+	struct tech_numbers tn2 = *tn;
+	struct bomber b2 = *b;
+	int c;
+
+	b2.parent = b;
+	printf(">Select refit level (mar[K], m[O]d, [D]octrine) or 0 to cancel\n");
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		switch (c) {
+		case 'k':
+		case 'K':
+			b2.refit = REFIT_MARK;
+			putchar('>');
+			return edit_loop(&b2, &tn2, ent);
+		case 'o':
+		case 'O':
+			b2.refit = REFIT_MOD;
+			putchar('>');
+			return edit_loop(&b2, &tn2, ent);
+		case 'd':
+		case 'D':
+			b2.refit = REFIT_DOCTRINE;
+			putchar('>');
+			return edit_loop(&b2, &tn2, ent);
+		default:
+			putchar('?');
+			break;
+		}
+	} while (1);
+
+	return -EIO;
+}
+
+static int edit_loop(struct bomber *b, struct tech_numbers *tn,
+		     const struct entities *ent)
 {
 	const char *help = "[METWCBFLU] to edit, I to show, D to dump, Return to recalculate, QQ to quit\n";
-	struct termios cooked;
+	bool qc = false;
 	int rc, c;
-	bool qc;
 
-	rc = enable_cbreak_mode(&cooked);
-	if (rc) {
-		fprintf(stderr, "Failed to enable cbreak mode on tty\n");
-		return rc;
-	}
 	dump_bomber_info(b);
 	dump_bomber_calcs(b);
 	printf(help);
@@ -959,10 +1133,10 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 	do {
 		c = getchar();
 		if (c == EOF)
-			break;
+			return -EIO;
 		if (c == 'Q') {
 			if (qc)
-				break;
+				return 1;
 			qc = true;
 			printf(">press again to quit\n");
 			continue;
@@ -1028,6 +1202,20 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 'R':
 			rc = edit_tech(tn, ent);
 			break;
+		case 'j':
+		case 'J':
+			/* Exit this refit */
+			if (b->parent)
+				return 0;
+			putchar('?');
+			continue;
+		case 'k':
+		case 'K':
+			rc = edit_refit(b, tn, ent);
+			if (rc == 1) // QQ
+				return 1;
+			putchar('>');
+			break;
 		case 'x':
 		case 'X':
 			/* Redisplay errors/warnings */
@@ -1048,7 +1236,22 @@ int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		if (rc < 0)
 			putchar('!');
 	} while (1);
+	
+	return rc;
+}
 
+int editor(struct bomber *b, struct tech_numbers *tn,
+	   const struct entities *ent)
+{
+	struct termios cooked;
+	int rc;
+
+	rc = enable_cbreak_mode(&cooked);
+	if (rc) {
+		fprintf(stderr, "Failed to enable cbreak mode on tty\n");
+		return rc;
+	}
+	rc = edit_loop(b, tn, ent);
 	putchar('\n');
 	if (disable_cbreak_mode(&cooked))
 		fprintf(stderr, "Failed to disable cbreak mode on tty\n");

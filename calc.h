@@ -151,7 +151,7 @@ enum refit_level {
 #define EW_LEN	80
 struct bomber {
 	/* Inputs */
-	struct bomber *parent;
+	const struct bomber *parent;
 	struct manf *manf;
 	struct engines engines;
 	struct turrets turrets;
@@ -192,6 +192,8 @@ struct bomber {
 	float cproto;
 	float cprod;
 };
+
+bool ancestor_has(const struct bomber *b, const struct turret *t);
 
 void init_bomber(struct bomber *b, struct manf *m, struct engine *e);
 int calc_bomber(struct bomber *b, struct tech_numbers *tn);

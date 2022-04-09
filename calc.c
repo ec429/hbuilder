@@ -102,6 +102,15 @@ static int calc_engines(struct bomber *b)
 	return 0;
 }
 
+bool ancestor_has(const struct bomber *b, const struct turret *t)
+{
+	if (!b->parent || b->refit < REFIT_MOD)
+		return false;
+	if (b->parent->turrets.typ[t->lxn] == t)
+		return true;
+	return ancestor_has(b->parent, t);
+}
+
 static int gcr[GC_COUNT] = {
 	[GC_FRONT] = 1,
 	[GC_BEAM_HIGH] = 2,
