@@ -95,6 +95,14 @@ struct manf {
 int load_manfs(struct list_head *head);
 int free_manfs(struct list_head *head);
 
+enum nav_aid {
+	NA_GEE,
+	NA_H2S,
+	NA_OBOE,
+
+	NA_COUNT
+};
+
 struct tech_numbers {
 	/* These MUST all be `unsigned int`!  Copying code assumes this. */
 	unsigned int g4t, g4c; // General Arrangement
@@ -113,7 +121,7 @@ struct tech_numbers {
 	unsigned int etf, edf, ees, eet, eec, emc; // Engine Mounts
 	unsigned int gtf, gdf, gcf, gac, gam; // Gun Turrets
 	unsigned int bt[BB_COUNT], bmc, bbb, bbf;
-	unsigned int esl, csb; // Equipment
+	unsigned int esl, csb, na[NA_COUNT]; // Equipment
 };
 
 struct tech {

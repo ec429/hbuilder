@@ -70,6 +70,20 @@ const char *describe_esl(enum elec_level esl)
 	}
 }
 
+const char *describe_navaid(enum nav_aid na)
+{
+	switch (na) {
+	case NA_GEE:
+		return "GEE";
+	case NA_H2S:
+		return "H₂S";
+	case NA_OBOE:
+		return "OBOE";
+	default:
+		return "error!  unknown navaid";
+	}
+}
+
 static char crew_to_letter(enum crewpos c)
 {
 	switch (c) {
@@ -171,7 +185,12 @@ static void dump_bay_fuse(struct bomber *b)
 
 static void dump_elec_fuel(struct bomber *b)
 {
+	unsigned int i;
+
 	printf("e[L]ectrics: %s", describe_esl(b->elec.esl));
+	for (i = 0; i < NA_COUNT; i++)
+		if (b->elec.navaid[i])
+			printf(", %s", describe_navaid(i));
 	printf("; f[U]el: %.1f hours%s\n", b->tanks.ht / 10.0f,
 	       b->tanks.sst ? ", self-sealing" : "");
 }
@@ -310,6 +329,8 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 static bool gun_conflict(const struct bomber *b, const struct turret *t)
 {
 	if (t->lxn == LXN_NOSE && b->engines.odd)
+		return true;
+	if (t->lxn == LXN_VENTRAL && b->elec.navaid[NA_H2S])
 		return true;
 	if (t->slb && b->fuse.typ != FT_SLABBY)
 		return true;
@@ -661,12 +682,61 @@ static int edit_fuse(struct bomber *b, struct tech_numbers *tn)
 	return -EIO;
 }
 
+static int edit_nav(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int i;
+	int c;
+
+	printf(">Select navaid letter to add, number to remove, or 0 to cancel\n");
+	for (i = 0; i < NA_COUNT; i++)
+		if (tn->na[i] && !b->elec.navaid[i])
+			printf("[%c] %s\n", i + 'A', describe_navaid(i));
+	for (i = 0; i < NA_COUNT; i++)
+		if (b->elec.navaid[i])
+			printf("[%c] %s\n", i + '1', describe_navaid(i));
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		if (c == 'Z') {
+			for (i = 0; i < NA_COUNT; i++)
+				b->elec.navaid[i] = false;
+			putchar('>');
+			dump_elec_fuel(b);
+			return 0;
+		}
+		i = c - 'A';
+		if (i >= 0 && i < NA_COUNT && tn->na[i]) {
+			b->elec.navaid[i] = true;
+			putchar('>');
+			dump_elec_fuel(b);
+			return 0;
+		}
+		i = c - '1';
+		if (i >= 0 && i < NA_COUNT && b->elec.navaid[i]) {
+			b->elec.navaid[i] = false;
+			putchar('>');
+			dump_elec_fuel(b);
+			return 0;
+		}
+		putchar('?');
+	} while (1);
+
+	return -EIO;
+}
+
 static int edit_elec(struct bomber *b, struct tech_numbers *tn)
 {
 	unsigned int i;
 	int c;
 
-	printf(">Select electrics level, or 0 to cancel\n");
+	printf(">Select electrics level, edit [N]avaids, or 0 to cancel\n");
 	for (i = 0; i < ESL_COUNT; i++)
 		if (i <= tn->esl)
 			printf("[%c] %s\n", i + '1', describe_esl(i));
@@ -680,6 +750,9 @@ static int edit_elec(struct bomber *b, struct tech_numbers *tn)
 			return 0;
 		}
 
+		if (c == 'N') {
+			return edit_nav(b, tn);
+		}
 		i = c - '1';
 		if (i < 0 || i >= ESL_COUNT || i > tn->esl) {
 			putchar('?');
@@ -745,7 +818,10 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 			printf("M%c", i + '1');
 	printf("TZ");
 	printf("F%c", b->fuse.typ + '1');
-	printf("L%c", b->elec.esl + '1');
+	printf("L%cLNZ", b->elec.esl + '1');
+	for (i = 0; i < NA_COUNT; i++)
+		if (b->elec.navaid[i])
+			printf("LN%c", i + 'A');
 	printf("E%d", b->engines.number);
 	for (i = 0; i < ent->neng; i++)
 		if (b->engines.typ == ent->eng[i])

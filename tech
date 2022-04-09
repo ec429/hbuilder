@@ -9,6 +9,7 @@ _PE:e=Merc:e=Mer4:e=Tigr:ETF=150:EDF=100:EES=0:EET=0:EEC=0:EMC=100:n=Pre-War Eng
 _BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Ven1:t=Beam:t=Tail:t=Ta4e:GTF=175:GDF=24:GCF=100:GAC=30:GAM=180:n=Basic Turrets:y=0
 _IB:BTS=70:BTM=100:BTC=0:BMC=0:BBB=8:BBF=2:CSB=0:n=Internal Bay:y=0
 _ED:ESL=0:n=Engine Dynamo:y=0
+_BN:NAG=0:NAH=0:NAO=0:n=Basic Navigation:y=0
 FEB:G4T=180:G4C=100:n=Four Engined Bombers:y=1940
 MFE:G4T=80:G4C=95:r=FEB:n=Mature Four-Engine Layout:y=1942
 CRS:CMI=170:CES=110:CCC=105:n=Crew Stations:y=1940
@@ -25,8 +26,8 @@ RFA:WLD=114:n=Refined Aerofoils:y=1943
 SST:SFT=110:SFV=50:SFC=125:n=Self-Sealing Tanks:y=1939
 LFT:FUT=100:FUC=81:n=Lightweight Fuel Tanks:y=1941
 IFT:FUT=90:FUV=90:FUC=96:r=LFT:n=Improved Fuel Tanks:y=1942
-HPE:ESL=1:n=High Power Electrics:y=1941
-SVS:ESL=2:r=HPE:n=Stable Voltage Supply:y=1942
+HPE:ESL=1:n=High Power Electrics:y=1940
+SVS:ESL=2:r=HPE:n=Stable Voltage Supply:y=1941
 LPE:e=Pega:e=MerX:e=Dagg:n=1939 Engines:y=2
 X24:e=Vult:e=Sab2:n=24-Cylinder Engines:y=1940
 VUR:e=Vul5:r=X24:n=Vulture Reliability:y=1942
@@ -55,3 +56,6 @@ BCE:BTS=55:n=Bomb Cells:y=1940
 LBB:BTC=110:BBF=3:r=HCB:n=Large Bomb Bay:y=1941
 BBS:BTM=80:BTC=100:BBB=10:r=LBB:n=Bomb Bay Structures:y=1942
 CSB:CSB=1:n=Course-Setting Bombsight:y=1942
+GEE:NAG=1:r=HPE:n=Hyperbolic Navigation:y=1942
+H2S:NAH=1:r=SVS:n=Terrain Radar:y=1943
+OBO:NAO=1:r=SVS:n=Ranging Transponder:y=1942

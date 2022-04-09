@@ -120,6 +120,7 @@ enum elec_level {
 struct electrics {
 	/* Inputs */
 	enum elec_level esl;
+	bool navaid[NA_COUNT];
 	/* Output cache */
 	float cost;
 };

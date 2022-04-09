@@ -349,13 +349,33 @@ static int calc_fuselage(struct bomber *b, struct tech_numbers *tn)
 	return 0;
 }
 
+static unsigned int nacost[NA_COUNT] = {
+	[NA_GEE] = 500,
+	[NA_H2S] = 2500,
+	[NA_OBOE] = 3000,
+};
+
 static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 {
 	struct electrics *e = &b->elec;
+	float ncost = 0.0f;
+	unsigned int i;
 
 	if (e->esl > tn->esl)
 		design_error(b, "Electrics %s not developed yet!\n",
 			     describe_esl(e->esl));
+	for (i = 0; i < NA_COUNT; i++)
+		if (e->navaid[i]) {
+			if (!tn->na[i])
+				design_error(b, "Navaid %s not developed yet!\n",
+					     describe_navaid(i));
+			else if (e->esl < (i == NA_GEE ? ESL_HIGH : ESL_STABLE))
+				design_error(b, "Navaid %s requires better electrics!\n",
+					     describe_navaid(i));
+			ncost += nacost[i];
+		}
+	if (b->turrets.typ[LXN_VENTRAL] && e->navaid[NA_H2S])
+		design_error(b, "H₂S conflicts with turret in ventral position!\n");
 	/* This is all hard-coded; datafiles / techlevels don't get to
 	 * change these coefficients.
 	 */
@@ -374,6 +394,7 @@ static int calc_electrics(struct bomber *b, struct tech_numbers *tn)
 		design_error(b, "Nonexistent electric supply level!\n");
 		return -EINVAL;
 	}
+	e->cost += ncost;
 	return 0;
 }
 
