@@ -101,16 +101,18 @@ Each turret takes up one of six location slots; you cannot add two turrets
 [C]rew can be used to add a crewman (either a [P]ilot, [N]avigator, [B]omb-
  aimer, [W]ireless-op, [E]ngineer or [G]unner), remove an existing crewman
  (by index in the list, e.g. [3] removes the third crewman), or toggle
- whether a crewman (B or W only) should dual-role as a gunner ([*] followed
- by number).
-Every aircraft must have a Pilot and Navigator.  There is rarely any
- benefit to having more than one of anything other than Gunners.  The value
- of Bomb-aimers, Wireless-ops and Engineers occurs mostly on an operational
- level that doesn't appear in the stats calculated by the editor.
+ whether a crewman should dual-rôle as a gunner ([*] followed by number).
+ Dual-rôling generally reduces a crewman's effectiveness in his primary
+ rôle, and some crew types (P, N, B) can only operate specific kinds of gun
+ mounts or turrets.  Engineers cannot dual-rôle at all.
+Every aircraft must have a Pilot and Navigator.  There are generally
+ diminishing returns to having more than one of anything other than
+ Gunners.  The value of Wireless-ops occurs mostly on an operational level
+ that doesn't appear in the stats calculated by the editor.
 
 [B]omb bay has sub-modes; input [B]omb capacity in lb, or select [G]irth
  (from [S]mall, [M]edium or [C]ookie).  Or choose between a [R]egular bomb-
- sight and a [C]ourse-Setting bomb sight (if developed).
+ sight and a Mark XIV [C]ourse-Setting bomb sight (if developed).
 Girth determines whether the aircraft can carry High Capacity bombs such as
  the 4,000lb "cookie"; Medium cannot close the doors over a cookie so
  incurs a speed penalty when carrying it (6% in the current Harris code),

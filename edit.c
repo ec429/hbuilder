@@ -479,8 +479,8 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 		if (i < b->crew.n) {
 			m = &b->crew.men[i];
 			if (gun) {
-				if (m->gun || m->pos == CCLASS_B ||
-				    m->pos == CCLASS_W) {
+				if (m->gun || (m->pos != CCLASS_E &&
+					       m->pos != CCLASS_G)) {
 					m->gun = !m->gun;
 					putchar('>');
 					dump_wing_crew(b);

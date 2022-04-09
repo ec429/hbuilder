@@ -211,34 +211,78 @@ const char *crew_name(enum crewpos c)
 static int calc_crew(struct bomber *b, struct tech_numbers *tn)
 {
 	struct crew *c = &b->crew;
-	unsigned int i;
+	unsigned int i, j;
 
 	c->gunners = 0;
 	c->pilot = c->nav = false;
 	c->dc = 0;
 	c->bn = 0;
+	memset(b->turrets.gas, 0, sizeof(b->turrets.gas));
 	for (i = 0; i < c->n; i++) {
 		struct crewman *m = c->men + i;
 
-		if (m->gun && m->pos != CCLASS_B && m->pos != CCLASS_W)
-			design_error(b, "%s cannot dual-role!\n",
-				     crew_name(m->pos));
 		if (m->pos == CCLASS_P)
 			c->pilot = true;
 		if (m->pos == CCLASS_N) {
 			c->nav = true;
-			c->bn += 1.0f;
+			c->bn += m->gun ? 0.75f : 1.0f;
 		}
 		if (m->pos == CCLASS_B)
 			c->bn += m->gun ? 0.45f : 0.6f;
-		if (m->pos == CCLASS_G || m->gun)
+		if (m->pos == CCLASS_G) {
 			c->gunners++;
+		} else if (m->gun) {
+			if (m->pos == CCLASS_W) {
+				c->gunners++;
+			} else if (m->pos == CCLASS_E) {
+				design_error(b, "Engineer cannot dual-role as gunner\n");
+			} else {
+				for (j = LXN_NOSE; j < LXN_COUNT; j++) {
+					struct turret *t = b->turrets.typ[j];
+
+					if (!t)
+						continue;
+					if (b->turrets.gas[j])
+						continue;
+					switch (m->pos) {
+					case CCLASS_P:
+						if (!t->ocp)
+							continue;
+						break;
+					case CCLASS_N:
+						if (!t->ocn)
+							continue;
+						break;
+					case CCLASS_B:
+						if (!t->ocb)
+							continue;
+						break;
+					default: /* can't happen */
+						design_error(b, "Unknown crewpos %d at %d\n",
+							     m->pos, i + 1);
+						return -EINVAL;
+					}
+					c->gunners++;
+					b->turrets.gas[j] = true;
+					break;
+				}
+				if (j >= LXN_COUNT)
+					design_warning(b, "No turrets found for %s to dual-role operate\n",
+						       crew_name(m->pos));
+			}
+		}
 		if (m->pos == CCLASS_E) {
 			c->engineers++;
 			c->dc += m->gun ? 0.75f : 1.0f;
 		}
-		if (m->pos == CCLASS_W)
+		if (m->pos == CCLASS_W) {
 			c->dc += m->gun ? 0.45f : 0.6f;
+			/* Radionavigation by pre-GEE methods,
+			 * such as beams (Jay, Elektra Sonne)
+			 */
+			if (b->elec.esl >= ESL_HIGH)
+				c->bn += m->gun ? 0.15f : 0.2f;
+		}
 	}
 	if (!c->pilot)
 		design_error(b, "Crew must include a pilot!\n");

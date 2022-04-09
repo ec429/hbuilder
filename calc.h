@@ -27,6 +27,7 @@ struct turrets {
 	struct turret *typ[LXN_COUNT];
 	/* Output cache */
 	unsigned int need_gunners;
+	bool gas[LXN_COUNT];
 	float drag;
 	float tare;
 	float ammo;
