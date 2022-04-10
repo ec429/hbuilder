@@ -666,22 +666,23 @@ static int calc_combat(struct bomber *b)
 	b->roll_pen = powf(b->wing.ar, 0.8f) * 0.7f;
 	b->turn_pen = sqrt(max(b->wing.wl - b->manf->tpl, 0.0f));
 	b->manu_pen = b->roll_pen + b->turn_pen;
-	b->evade_factor = (max(30.0f - b->ceiling, 3.0f) / 10.0f) *
-			  sqrt(max(350.0f - b->cruise_spd, 30.0f) / 1.7f) *
+	b->evade_factor = (max(33.0f - b->ceiling, 2.0f) / 13.0f) *
+			  powf(max(350.0f - b->cruise_spd, 30.0f) / 1.2f,
+			       0.45) *
 			  (1.0f - 0.3f / max(b->manu_pen - 4.5f, 0.5f));
 	b->vuln = (b->engines.vuln + b->fuse.vuln) *
 		  max(3.8f - sqrt(b->crew.dc), 1.0f) +
 		  b->tanks.vuln;
 	b->flak_factor = b->vuln * 3.0f *
-			 sqrt(max(30.0f - b->ceiling, 3.0f));
+			 sqrt(max(35.0f - b->ceiling, 2.0f) / 1.5f);
 	/* Looks backwards?  Lower is better for gunrate */
 	sgf = max((b->turrets.need_gunners + 1.0f) / (b->crew.gunners + 1.0f),
 		  1.0f);
 	for (sch = 0; sch < 2; sch++) {
-		b->fight_factor[sch] = powf(b->evade_factor, 0.7f) *
+		b->fight_factor[sch] = powf(b->evade_factor, 0.8f) *
 				       (b->vuln * 4.0f +
 					b->turrets.rate[sch] * sgf) /
-				       3.0f;
+				       3.6f;
 		b->defn[sch] = b->fight_factor[sch] + b->flak_factor;
 	}
 	/* accu contribs bn, speed, esl */
