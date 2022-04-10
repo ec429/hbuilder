@@ -2,8 +2,8 @@ Ngun:SRV=2:TWT=25:DRG=4:LXN=1:GUN=1:GCF=10:OCP=1:OCB=1:n=Nose gun (single)
 Nose:SRV=5:TWT=100:DRG=6:LXN=1:GUN=2:GCF=20:GCD=20:OCB=1:n=Nose turret (twin)
 Chin:SRV=7:TWT=50:DRG=5:LXN=6:GUN=2:GCL=12:OCN=1:n=Rearward chin mount
 Daf1:SRV=4:TWT=20:DRG=5:LXN=2:GUN=1:GCH=10:n=Dorsal after (single)
-Dor1:SRV=6:TWT=70:DRG=8:LXN=2:GUN=1:GCD=10:GCH=10:n=Dorsal turret (single)
-Dors:SRV=5:TWT=100:DRG=10:LXN=2:GUN=2:GCD=20:GCH=20:n=Dorsal turret (twin)
+Dor1:SRV=6:TWT=70:DRG=8:LXN=2:GUN=1:GCF=5:GCD=10:GCH=10:n=Dorsal turret (single)
+Dors:SRV=5:TWT=100:DRG=9:LXN=2:GUN=2:GCF=10:GCD=20:GCH=20:n=Dorsal turret (twin)
 Dor4:SRV=6:TWT=170:DRG=12:LXN=2:GUN=4:GCF=20:GCD=40:GCH=40:n=Dorsal turret (quad)
 Dor5:SRV=7:TWT=160:DRG=10:LXN=2:GUN=5:GCF=25:GCD=50:GCH=50:n=Dorsal turret (.50)
 Daft:SRV=4:TWT=30:DRG=6:LXN=2:GUN=2:GCH=20:n=Dorsal after mount
@@ -12,7 +12,7 @@ Wast:SRV=3:TWT=30:DRG=3:LXN=4:GUN=2:GCD=10:GCV=10:n=Waist mount
 Vaf1:SRV=5:TWT=36:DRG=7:LXN=5:GUN=1:GCL=10:GCB=10:n=Ventral after (single)
 Vaft:SRV=5:TWT=50:DRG=8:LXN=5:GUN=2:GCL=20:GCB=20:n=Ventral after mount
 Ven1:SRV=9:TWT=40:DRG=8:LXN=5:GUN=1:GCV=7:GCL=8:GCB=7:n=Ventral (single)
-Vent:SRV=10:TWT=50:DRG=8:LXN=5:GUN=2:GCV=15:GCL=15:GCB=15:n=Ventral dustbin (twin)
+Vent:SRV=10:TWT=90:DRG=8:LXN=5:GUN=2:GCV=15:GCL=15:GCB=15:n=Ventral dustbin (twin)
 Ven2:SRV=6:TWT=120:DRG=10:LXN=5:GUN=2:GCV=20:GCL=20:GCB=15:n=Ventral turret (twin)
 Ball:SRV=8:TWT=110:DRG=9:LXN=5:GUN=2:GCV=20:GCL=20:GCB=20:n=Ventral ball (twin)
 Bal4:SRV=10:TWT=200:DRG=11:LXN=5:GUN=4:GCV=40:GCL=40:GCB=40:n=Ventral ball (quad)

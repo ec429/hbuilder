@@ -147,6 +147,7 @@ static int calc_turrets(struct bomber *b)
 	t->need_gunners = 0;
 	t->drag = 0;
 	t->tare = 0;
+	t->mtare = 0;
 	t->ammo = 0;
 	t->serv = 1.0f;
 	t->cost = 0;
@@ -156,13 +157,21 @@ static int calc_turrets(struct bomber *b)
 		t->gc[j] = 0;
 	for (i = LXN_NOSE; i < LXN_COUNT; i++) {
 		struct turret *g = t->typ[i];
+		struct turret *m = t->mou[i];
 		float tare;
 
 		if (!g)
 			continue;
-		if (!mod_ancestor(b)->turrets.typ[i])
-			design_error(b, "%s added in %s refit!\n", g->name,
+		if (!m) {
+			design_error(b, "%s without a mount!\n", g->name);
+			return -EINVAL;
+		}
+		if (m != mod_ancestor(b)->turrets.mou[i])
+			design_error(b, "%s mount added in %s refit!\n", m->name,
 				     describe_refit(b->refit));
+		if (g->twt > m->twt)
+			design_error(b, "%s too heavy for mounts!\n",
+				     g->name);
 		if (!g->unlocked)
 			design_error(b, "%s not developed yet!\n", g->name);
 		if (g->slb && b->fuse.typ != FT_SLABBY)
@@ -170,8 +179,9 @@ static int calc_turrets(struct bomber *b)
 				     g->name);
 		t->need_gunners++;
 		t->drag += g->drg * tn->gdf;
-		tare = g->twt * tn->gtf / 100.0f;
+		tare = g->twt + m->twt * tn->gtf / 100.0f;
 		t->tare += tare;
+		t->mtare += m->twt * (1.0f + tn->gtf / 100.0f);
 		t->ammo += g->gun * tn->gam;
 		t->serv *= 1.0f - g->srv / 1000.0f;
 		t->cost += 3.0f * tare + g->gun * tn->gcf / 10.0f + g->gun * tn->gac / 10.0f;
@@ -181,7 +191,7 @@ static int calc_turrets(struct bomber *b)
 	t->serv = 1.0f - t->serv;
 	t->rate[0] = t->rate[1] = 0;
 	for (j = 0; j < GC_COUNT; j++) {
-		float x = gcr[j] / (1.0f + t->gc[j]);
+		float x = gcr[j] * 3.0f / (3.0f + t->gc[j] * t->gc[j]);
 
 		if (j != GC_BENEATH)
 			t->rate[0] += x;
@@ -399,26 +409,24 @@ static int calc_fuselage(struct bomber *b)
 	if (b->refit && f->typ != b->parent->fuse.typ)
 		design_error(b, "Fuselage type changed in %s refit!\n",
 			     describe_refit(b->refit));
-	/* First need core_tare, as input to fuse_tare */
+	/* First need core_mtare, as input to fuse_tare */
 	b->core_tare = (b->turrets.tare + b->crew.tare + b->bay.tare) *
 		       b->manf->act / 100.0f;
+	b->core_mtare = (b->turrets.mtare + b->crew.tare + b->bay.tare) *
+			b->manf->act / 100.0f;
 	if (f->typ < 0 || f->typ >= FT_COUNT) { /* can't happen */
 		design_error(b, "Nonexistent fuselage type!\n");
 		return -EINVAL;
 	}
 	if (f->typ == FT_GEODETIC && !b->manf->geo)
 		design_error(b, "This manufacturer cannot design geodetics!\n");
-	/* In a MOD the fuselage is sized to the old core_tare;
-	 * if this makes it too small, penalise other stats slightly
-	 */
-	f->tare = mod_ancestor(b)->core_tare * (tn->ft[f->typ] / 100.0f) *
+	f->tare = b->core_mtare * (tn->ft[f->typ] / 100.0f) *
 		  b->manf->ft[f->typ] / 100.0f;
-	f->cram = max(b->core_tare / mod_ancestor(b)->core_tare, 1.0f);
-	f->serv = tn->fs[f->typ] * f->cram / 1000.0f;
-	f->fail = tn->ff[f->typ] * f->cram / 1000.0f;
-	f->cost = f->tare * f->cram * 1.2f * (b->manf->acc / 100.0f) *
+	f->serv = tn->fs[f->typ] / 1000.0f;
+	f->fail = tn->ff[f->typ] / 1000.0f;
+	f->cost = f->tare * 1.2f * (b->manf->acc / 100.0f) *
 		  (tn->fc[f->typ] / 100.0f);
-	f->vuln = tn->fv[f->typ] * f->cram / 100.0f;
+	f->vuln = tn->fv[f->typ] / 100.0f;
 	/* drag needs b->tare, fill in later */
 	return 0;
 }

@@ -1,12 +1,12 @@
 _MB:G4T=0:G4C=0:n=Medium Bombers:y=0
 _CA:CMI=165:CES=100:CCC=100:n=Crew Accommodation:y=0
 _PD:CLT=20:n=Pre-War Doctrine:y=0
-_BF:FTN=150:FTT=100:FTS=90:FTG=170:FDN=50:FDT=30:FDS=72:FDG=54:FWT=135:FSN=30:FST=64:FSS=27:FSG=20:FFN=30:FFT=40:FFS=27:FFG=20:FVN=20:FVT=30:FVS=20:FVG=8:n=Basic Fuselages:y=0
+_BF:FTN=150:FTT=100:FTS=90:FTG=170:FDN=50:FDT=40:FDS=72:FDG=54:FWT=135:FSN=30:FST=64:FSS=27:FSG=20:FFN=30:FFT=40:FFS=27:FFG=20:FVN=20:FVT=30:FVS=20:FVG=8:n=Basic Fuselages:y=0
 _BM:CCN=100:CCT=160:CCS=80:CCG=100:FCN=100:FCT=160:FCS=70:FCG=110:n=Basic Manufacturing:y=0
 _CW:WTS=150:WTC=120:WTF=100:WLD=108:WCF=100:n=Cantilever Wings:y=0
 _FT:FUT=120:FUV=100:FGV=80:SFT=0:SFV=0:SFC=0:FUC=60:n=Fuel Tanks:y=0
 _PE:e=Merc:e=Mer4:e=Tigr:ETF=150:EDF=100:EES=0:EET=0:EEC=0:EMC=100:n=Pre-War Engines:y=0
-_BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Ven1:t=Beam:t=Tail:t=Ta4e:GTF=175:GDF=24:GCF=100:GAC=30:GAM=180:n=Basic Turrets:y=0
+_BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Ven1:t=Beam:t=Tail:t=Ta4e:GTF=75:GDF=24:GCF=100:GAC=30:GAM=180:n=Basic Turrets:y=0
 _IB:BTS=70:BTM=100:BTC=0:BMC=0:BBB=8:BBF=2:CSB=0:n=Internal Bay:y=0
 _ED:ESL=0:n=Engine Dynamo:y=0
 _BN:NAG=0:NAH=0:NAO=0:n=Basic Navigation:y=0
@@ -16,7 +16,7 @@ CRS:CMI=170:CES=110:CCC=105:n=Crew Stations:y=1940
 ICS:CMI=135:CCC=108:r=CRS:n=Improved Crew Stations:y=1943
 DHA:CLT=27:n=High Altitude Doctrine:y=1941
 IGF:FTG=140:FCG=120:n=Improved Geodetics:y=1940
-RFF:FTN=110:FTT=80:FDN=45:FDT=27:FCN=150:FCT=220:FDS=68:n=Refined Fuselages:y=1941
+RFF:FTN=110:FTT=80:FDN=45:FDT=36:FCN=150:FCT=220:FDS=68:n=Refined Fuselages:y=1941
 GSF:FDG=48:FCG=130:r=IGF:n=Geodetic Streamlining:y=1941
 SCF:FTN=80:FTT=60:FTS=50:FCN=220:FCT=300:FCS=140:FWT=125:r=RFF:n=Fuselage Stressing Calcs:y=1943
 LWW:WTF=90:WCF=120:n=Lightweight Wings:y=1941
@@ -48,7 +48,7 @@ IVT:t=Ven2:r=DUT:n=Improved Ventral Turrets:y=1942
 BAT:t=Ball:t=Bal4:r=IVT:n=Ball Turret:y=1943
 FCT:t=Dor5:t=Tai5:r=QUT:n=.50 Caliber Turret:y=1943
 GLT:t=Aglt:r=QUT:r=SVS:n=Gun-Laying Radar:y=1944
-IHY:GTF=160:GCF=105:n=Improved Hydraulics:y=1941
+IHY:GTF=60:GCF=105:n=Improved Hydraulics:y=1941
 TUF:GDF=18:n=Turret Fairings:y=1942
 LAT:GAM=160:GAC=24:n=Lightweight Ammo Tracks:y=1941
 HCB:BTM=90:BMC=1:n=High Capacity Bombs:y=1940

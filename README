@@ -97,6 +97,8 @@ Each turret takes up one of six location slots; you cannot add two turrets
  odd number of engines.  Survivability is helped by having guns covering
  several directions, but the weight and drag of the turrets will reduce
  aircraft performance.  Stats for each turret are defined in file `guns`.
+Similarly to engines, you can press [@] to overbuild the mounts for a
+ (possibly not-yet-unlocked) turret type.
 
 [W]ing gives the choice of two sub-modes; press A to set the wing area or
  R to set the aspect ratio.  Then, enter an integer; note that for [R]atio
@@ -182,7 +184,7 @@ The following cannot be changed in refits:
 
 The following changes can be made in marks but not mods:
 * change Engine type or mounts
-* add new Turrets
+* add new Turrets or mounts
 * add new Crew
 * change eLectric supply level
 * change fUel capacity
@@ -190,8 +192,10 @@ The following changes can be made in marks but not mods:
 The following changes can be made even in mods:
 * upgrade Engine on previously overbuilt mounts
   - note that your fuelmass stays the same, so fuel in hours may decrease!
+  - the engine must be the precise type the mounts were designed for
 * remove Turrets
-* add Turrets to slots that were originally used on this mark
+* add Turrets to existing mounts
+  - the turret must be in the same location as the mount, and no heavier
 * remove Crew
 * re-add Crew that were originally present on this mark
 * change Bombsight

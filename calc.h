@@ -25,11 +25,13 @@ struct engines {
 struct turrets {
 	/* Inputs */
 	struct turret *typ[LXN_COUNT];
+	struct turret *mou[LXN_COUNT];
 	/* Output cache */
 	unsigned int need_gunners;
 	bool gas[LXN_COUNT];
 	float drag;
 	float tare;
+	float mtare;
 	float ammo;
 	float serv;
 	float cost;
@@ -104,7 +106,6 @@ struct fuselage {
 	/* Output cache */
 	float serv, fail;
 	float tare;
-	float cram;
 	float cost;
 	float vuln;
 	float drag;
@@ -172,6 +173,7 @@ struct bomber {
 	float serv;
 	float fail;
 	float core_tare;
+	float core_mtare;
 	float tare;
 	float gross;
 	float drag;

@@ -168,10 +168,17 @@ static void dump_turrets(struct bomber *b)
 
 	printf("[T]urrets:");
 	for (i = LXN_NOSE; i < LXN_COUNT; i++) {
-		struct turret *t = b->turrets.typ[i];
+		const struct turret *t = b->turrets.typ[i];
+		const struct turret *m = b->turrets.mou[i];
 
-		if (t) {
-			printf("%s %s", comma ? "," : "", t->name);
+		if (t || m) {
+			if (comma)
+				printf(",");
+			if (t)
+				printf(" %s", t->name);
+			if (t != m)
+				printf(" (mount for %s)",
+				       m ? m->name : "???");
 			comma = true;
 		}
 	}
@@ -416,6 +423,53 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 	return -EIO;
 }
 
+static bool gun_mount_conflict(const struct bomber *b, const struct turret *t)
+{
+	if (t->lxn == LXN_NOSE && b->engines.odd)
+		return true;
+	if (t->lxn == LXN_VENTRAL && b->elec.navaid[NA_H2S])
+		return true;
+	if (t->slb && b->fuse.typ != FT_SLABBY)
+		return true;
+	return b->turrets.typ[t->lxn] &&
+	       b->turrets.typ[t->lxn]->twt > t->twt;
+}
+
+static int edit_gun_mount(struct bomber *b, struct tech_numbers *tn,
+			  const struct entities *ent)
+{
+	unsigned int i;
+	int c;
+
+	printf(">Prepare mounts for turret, or 0 to cancel\n");
+	for (i = 0; i < ent->ngun; i++)
+		if (!gun_mount_conflict(b, ent->gun[i]))
+			printf("[%c] %s\n", i + 'A', ent->gun[i]->name);
+
+	do {
+		c = getchar();
+		if (c == EOF)
+			break;
+		if (c == '0') {
+			putchar('>');
+			return 0;
+		}
+
+		i = c - 'A';
+		if (i < 0 || i >= ent->ngun ||
+		    gun_mount_conflict(b, ent->gun[i])) {
+			putchar('?');
+			continue;
+		}
+		b->turrets.mou[ent->gun[i]->lxn] = ent->gun[i];
+		putchar('>');
+		dump_turrets(b);
+		return 0;
+	} while (1);
+
+	return -EIO;
+}
+
 static bool gun_conflict(const struct bomber *b, const struct turret *t)
 {
 	if (t->lxn == LXN_NOSE && b->engines.odd)
@@ -424,23 +478,21 @@ static bool gun_conflict(const struct bomber *b, const struct turret *t)
 		return true;
 	if (t->slb && b->fuse.typ != FT_SLABBY)
 		return true;
+	if (b->refit >= REFIT_MOD && (!b->turrets.mou[t->lxn] ||
+				      b->turrets.mou[t->lxn]->twt < t->twt))
+		return true;
 	return b->turrets.typ[t->lxn] != NULL;
-}
-
-static bool ancestor_has_gun(const struct bomber *b, const struct turret *t)
-{
-	return mod_ancestor(b)->turrets.typ[t->lxn];
 }
 
 static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 		     const struct entities *ent)
 {
+	enum turret_location lxn;
 	unsigned int i;
 	int c;
 
 	/* Mark can freely alter turrets.
-	 * Mod can remove turrets, or restore turret slots from ancestor mods
-	 * (but not from ancestor marks).
+	 * Mod can remove turrets, or install turrets into existing mounts.
 	 * Doctrine can't alter turrets at all.
 	 */
 
@@ -449,12 +501,9 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 		return -EINVAL;
 	}
 
-	printf(">Select turret to add, number to remove, or 0 to cancel\n");
+	printf(">Select turret to add, number to remove, @ for mounts, or 0 to cancel\n");
 	for (i = 0; i < ent->ngun; i++)
-		if (ent->gun[i]->unlocked &&
-		    !gun_conflict(b, ent->gun[i]) &&
-		    (b->refit < REFIT_MOD ||
-		     ancestor_has_gun(b, ent->gun[i])))
+		if (ent->gun[i]->unlocked && !gun_conflict(b, ent->gun[i]))
 			printf("[%c] %s\n", i + 'A', ent->gun[i]->name);
 	for (i = LXN_NOSE; i < LXN_COUNT; i++)
 		if (b->turrets.typ[i])
@@ -469,29 +518,37 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 			return 0;
 		}
 		if (c == 'Z') {
-			for (i = LXN_NOSE; i < LXN_COUNT; i++)
+			for (i = LXN_NOSE; i < LXN_COUNT; i++) {
 				b->turrets.typ[i] = NULL;
+				if (b->refit < REFIT_MOD)
+					b->turrets.mou[i] = NULL;
+			}
 			putchar('>');
 			dump_turrets(b);
 			return 0;
 		}
 
+		if (c == '@' && b->refit < REFIT_MOD)
+			return edit_gun_mount(b, tn, ent);
 		i = c - '0';
 		if (i >= LXN_NOSE && i < LXN_COUNT && b->turrets.typ[i]) {
 			b->turrets.typ[i] = NULL;
+			if (b->refit < REFIT_MOD)
+				b->turrets.mou[i] = NULL;
 			putchar('>');
 			dump_turrets(b);
 			return 0;
 		}
 		i = c - 'A';
 		if (i < 0 || i >= ent->ngun || !ent->gun[i]->unlocked ||
-		    gun_conflict(b, ent->gun[i]) ||
-		    (b->refit > REFIT_MARK &&
-		     !ancestor_has_gun(b, ent->gun[i]))) {
+		    gun_conflict(b, ent->gun[i])) {
 			putchar('?');
 			continue;
 		}
-		b->turrets.typ[ent->gun[i]->lxn] = ent->gun[i];
+		lxn = ent->gun[i]->lxn;
+		b->turrets.typ[lxn] = ent->gun[i];
+		if (b->refit < REFIT_MOD)
+			b->turrets.mou[lxn] = ent->gun[i];
 		putchar('>');
 		dump_turrets(b);
 		return 0;
@@ -1052,10 +1109,15 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 		for (i = 0; i < ent->neng; i++)
 			if (b->engines.mou == ent->eng[i])
 				printf("E@%c", i + 'A');
-	for (i = LXN_NOSE; i < LXN_COUNT; i++)
+	for (i = LXN_NOSE; i < LXN_COUNT; i++) {
 		for (j = 0; j < ent->ngun; j++)
 			if (b->turrets.typ[i] == ent->gun[j])
 				printf("T%c", j + 'A');
+		if (b->turrets.mou[i] != b->turrets.typ[i])
+			for (j = 0; j < ent->ngun; j++)
+				if (b->turrets.mou[i] == ent->gun[j])
+					printf("T@%c", j + 'A');
+	}
 	printf("WA%u\nWR%u\n", b->wing.area, b->wing.art);
 	printf("CZ");
 	for (i = 0; i < b->crew.n; i++) {
