@@ -116,9 +116,13 @@ Every aircraft must have a Pilot and Navigator.  There are generally
  Gunners.  The value of Wireless-ops occurs mostly on an operational level
  that doesn't appear in the stats calculated by the editor.
 
-[B]omb bay has sub-modes; input [B]omb capacity in lb, or select [G]irth
+[B]omb bay has sub-modes; input [B]omb load in lb, or select [G]irth
  (from [S]mall, [M]edium or [C]ookie).  Or choose between a [R]egular bomb-
  sight and a Mark XIV [C]ourse-Setting bomb sight (if developed).
+You can set the ca[P]acity higher than the load, to allow increasing the
+ bombload in refits (or even as Doctrine).  In-game the carried bombload
+ will depend on the fuel required for the mission range, and the maximum
+ gross weight or take-off speed supported by the active runway.
 Girth determines whether the aircraft can carry High Capacity bombs such as
  the 4,000lb "cookie"; Medium cannot close the doors over a cookie so
  incurs a speed penalty when carrying it (6% in the current Harris code),
@@ -146,11 +150,22 @@ The Course-Setting bomb sight improves bombing accuracy significantly.
  (numbers) navaids, which have special nonlinear effects in-game on
  navigational accuracy.
 
-[U] has a sub-mode [U] to set the fuel capacity in tenths of an hour;
+[U] has a sub-mode [U] to set the fuel capacity in hundreds of lb, and
+ another sub-mode [P] to change the percentage fill level of the tanks;
  alternatively select [R]egular or [S]elf-sealing tanks, or press 0 to
  leave the mode without making changes.
 Self-sealing fuel tanks greatly reduce vulnerability, though increase tare
  weight and cost.
+Having tanks less than 100% full allows you to increase the fuel load
+ later, either for the increased fuel consumption of upgraded engines in a
+ Mod refit, or as a Doctrine change to perform extended-range missions with
+ a reduced bomb load.  Note that the fill level you specify at Mark or
+ lower level determines the gross take-off weight for which the structure
+ is stressed; Mod or Doctrine refits cannot exceed this.  Stressing the
+ structure for a lower m.g.t.o.w. reduces build cost.
+For reference, from Lincolnshire to Berlin is about 600 miles as the crow
+ flies (unlike the bomber, which follows a less straight route to confuse
+ the defences and thus has a little more distance to cover).
 
 [R]esearch doesn't edit the aircraft directly, rather it allows you to
  alter the technology levels used to calculate the design (which may also
@@ -179,7 +194,7 @@ The following cannot be changed in refits:
 * Manufacturer
 * number of Engines
 * Wing
-* Bomb Bay capacity or Girth
+* Bomb load, bomb bay caPacity or Girth
 * Fuselage type
 
 The following changes can be made in marks but not mods:
@@ -188,6 +203,7 @@ The following changes can be made in marks but not mods:
 * add new Crew
 * change eLectric supply level
 * change fUel capacity
+* m.g.t.o.w. is permitted to increase
 
 The following changes can be made even in mods:
 * upgrade Engine on previously overbuilt mounts
@@ -204,3 +220,5 @@ The following changes can be made even in mods:
 
 The following can be changed through doctrine:
 * dual-rôling of crewmen
+* Bomb load, within capacity
+* fUel load Percent of capacity

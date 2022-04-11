@@ -90,6 +90,7 @@ struct crew {
 struct bombbay {
 	/* Inputs */
 	unsigned int cap;
+	unsigned int load;
 	enum bb_girth girth;
 	bool csbs; /* not really bomb "bay" but whatever */
 	/* Output cache */
@@ -130,10 +131,12 @@ struct electrics {
 
 struct tanks {
 	/* Inputs */
-	unsigned int ht; // hours in tenths
+	unsigned int hlb; // hundreds lb capacity
+	unsigned int pct; // fill level %
 	bool sst;
 	/* Output cache */
 	float hours;
+	float cap;
 	float mass;
 	float tare;
 	float cost;
@@ -176,6 +179,8 @@ struct bomber {
 	float core_mtare;
 	float tare;
 	float gross;
+	unsigned int mtow; // structure stressed for this; mod/doc can't exceed
+	float overgross;
 	float drag;
 	float core_cost;
 	float cost;
@@ -184,7 +189,6 @@ struct bomber {
 	float cruise_alt, cruise_spd;
 	float init_climb, deck_spd;
 	float range;
-	float ferry;
 	float roll_pen, turn_pen, manu_pen;
 	float evade_factor;
 	float vuln;

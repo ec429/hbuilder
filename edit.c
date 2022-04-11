@@ -206,14 +206,18 @@ static void dump_wing_crew(struct bomber *b)
 
 static void dump_bay_fuse(struct bomber *b)
 {
-	printf("[B]omb bay: %ulb, %s", b->bay.cap,
-	       describe_bbg(b->bay.girth));
+	if (b->bay.load == b->bay.cap)
+		printf("[B]omb bay: %ulb, %s", b->bay.cap,
+		       describe_bbg(b->bay.girth));
+	else
+		printf("[B]omb bay: %u/%ulb, %s", b->bay.load, b->bay.cap,
+		       describe_bbg(b->bay.girth));
 	if (b->bay.csbs)
 		printf(", CSBS");
 	printf("; [F]uselage: %s\n", describe_ftype(b->fuse.typ));
 }
 
-static void dump_elec_fuel(struct bomber *b)
+static void dump_elec(struct bomber *b)
 {
 	unsigned int i;
 
@@ -221,8 +225,14 @@ static void dump_elec_fuel(struct bomber *b)
 	for (i = 0; i < NA_COUNT; i++)
 		if (b->elec.navaid[i])
 			printf(", %s", describe_navaid(i));
-	printf("; f[U]el: %.1f hours%s\n", b->tanks.hours,
-	       b->tanks.sst ? ", self-sealing" : "");
+	putchar('\n');
+}
+
+static void dump_fuel(struct bomber *b)
+{
+	printf("f[U]el: %u00lb%s, %d%% full\n", b->tanks.hlb,
+	       b->tanks.sst ? ", self-sealing" : "",
+	       b->tanks.pct);
 }
 
 static void dump_bomber_info(struct bomber *b)
@@ -232,11 +242,14 @@ static void dump_bomber_info(struct bomber *b)
 	dump_turrets(b);
 	dump_wing_crew(b);
 	dump_bay_fuse(b);
-	dump_elec_fuel(b);
+	dump_elec(b);
+	dump_fuel(b);
 
 	if (b->refit)
 		printf("Design is a %s refit; changes limited.\n",
 		       describe_refit(b->refit));
+	if (b->refit >= REFIT_MOD)
+		printf("Max. take-off weight %ulb\n", b->mtow);
 
 	if (b->error)
 		printf("Design contains errors!  Please review [X].\n");
@@ -266,8 +279,8 @@ static void dump_bomber_calcs(struct bomber *b)
 	printf("Speeds: take-off %.1fmph, max %.1fmph, cruise %.1fmph at %.0fft\n",
 	       b->takeoff_spd, b->deck_spd, b->cruise_spd,
 	       b->cruise_alt * 1000.0f);
-	printf("Service ceiling: %.0fft; range: %.0fmi; initial climb %.0ffpm\n",
-	       b->ceiling * 1000.0f, b->range, b->init_climb);
+	printf("Service ceiling: %.0fft; range: %.0fmi (%.1fhr); initial climb %.0ffpm\n",
+	       b->ceiling * 1000.0f, b->range, b->tanks.hours, b->init_climb);
 	printf("Ratings: defn %.1f/%.1f; fail %.1f; svp %.1f; accu %.1f\n",
 	       b->defn[0], b->defn[1], b->fail * 100.0f,
 	       b->serv * 100.0f, b->accu * 100.0f);
@@ -735,6 +748,39 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 	return -EIO;
 }
 
+static int edit_bomb_load(struct bomber *b)
+{
+	unsigned int v;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter bombload in lb, or 0 to cancel\n");
+	} while (rc);
+	if (!v) {
+		putchar('>');
+		return 0;
+	}
+	if (b->refit) {
+		if (v > b->bay.cap) {
+			fprintf(stderr, "Cannot exceed capacity of %ulb\n",
+				b->bay.cap);
+			return -EINVAL;
+		}
+		putchar('>');
+		b->bay.load = v;
+		dump_bay_fuse(b);
+		return 0;
+	}
+	putchar('>');
+	b->bay.load = b->bay.cap = v;
+	dump_bay_fuse(b);
+	return 0;
+}
+
 static int edit_cap(struct bomber *b)
 {
 	unsigned int v;
@@ -805,23 +851,17 @@ static int edit_girth(struct bomber *b, struct tech_numbers *tn)
 
 static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 {
+	bool sight = b->refit < REFIT_DOCTRINE;
+	bool cap = !b->refit;
 	int c;
 
-	if (b->refit >= REFIT_DOCTRINE) {
-		fprintf(stderr, "%s refit cannot change bombbay or sight.\n", describe_refit(b->refit));
-		return -EINVAL;
-	}
-	if (b->refit) {
-		if (!tn->csb) {
-			fprintf(stderr, "%s refit cannot change bombbay.\n", describe_refit(b->refit));
-			return -EINVAL;
-		}
-		printf(">[R]egular or [C]S bomb sight, or 0 to cancel\n");
-	} else if (tn->csb) {
-		printf(">[B]omb capacity, [G]irth, [R]egular or [C]S bomb sight, or 0 to cancel\n");
-	} else {
-		printf(">[B]omb capacity, [G]irth, or 0 to cancel\n");
-	}
+	printf(">[B]ombload, ");
+	if (cap)
+		printf("ca[P]acity, [G]irth, ");
+	if (sight && tn->csb)
+		printf("[R]egular or [C]S bomb sight, ");
+	printf("or 0 to cancel\n");
+
 	do {
 		c = getchar();
 		if (c == EOF)
@@ -834,23 +874,29 @@ static int edit_bay(struct bomber *b, struct tech_numbers *tn)
 		switch (c) {
 		case 'b':
 		case 'B':
-			if (!b->refit)
+			return edit_bomb_load(b);
+		case 'p':
+		case 'P':
+			if (cap)
 				return edit_cap(b);
 			break;
 		case 'g':
 		case 'G':
-			if (!b->refit)
+			if (cap)
 				return edit_girth(b, tn);
 			break;
 		case 'r':
 		case 'R':
-			b->bay.csbs = false;
-			putchar('>');
-			dump_bay_fuse(b);
-			return 0;
+			if (sight) {
+				b->bay.csbs = false;
+				putchar('>');
+				dump_bay_fuse(b);
+				return 0;
+			}
+			break;
 		case 'c':
 		case 'C':
-			if (tn->csb) {
+			if (sight && tn->csb) {
 				b->bay.csbs = true;
 				putchar('>');
 				dump_bay_fuse(b);
@@ -936,21 +982,21 @@ static int edit_nav(struct bomber *b, struct tech_numbers *tn)
 			for (i = 0; i < NA_COUNT; i++)
 				b->elec.navaid[i] = false;
 			putchar('>');
-			dump_elec_fuel(b);
+			dump_elec(b);
 			return 0;
 		}
 		i = c - 'A';
 		if (i >= 0 && i < NA_COUNT && tn->na[i]) {
 			b->elec.navaid[i] = true;
 			putchar('>');
-			dump_elec_fuel(b);
+			dump_elec(b);
 			return 0;
 		}
 		i = c - '1';
 		if (i >= 0 && i < NA_COUNT && b->elec.navaid[i]) {
 			b->elec.navaid[i] = false;
 			putchar('>');
-			dump_elec_fuel(b);
+			dump_elec(b);
 			return 0;
 		}
 		putchar('?');
@@ -993,7 +1039,7 @@ static int edit_elec(struct bomber *b, struct tech_numbers *tn)
 		if (i < ESL_COUNT && i <= tn->esl && b->refit < REFIT_MOD) {
 			b->elec.esl = i;
 			putchar('>');
-			dump_elec_fuel(b);
+			dump_elec(b);
 			return 0;
 		}
 		putchar('?');
@@ -1012,37 +1058,51 @@ static int edit_fuel(struct bomber *b)
 		if (rc == -EIO)
 			return rc;
 		if (rc)
-			printf("Enter fuel in tenths hours, or 0 to cancel\n");
+			printf("Enter fuel capacity in hundreds lb, or 0 to cancel\n");
 	} while (rc);
 
 	if (v) {
-		b->tanks.ht = v;
-		b->tanks.hours = v / 10.0f;
+		b->tanks.hlb = v;
 		putchar('>');
-		dump_elec_fuel(b);
+		dump_fuel(b);
+	}
+	return 0;
+}
+
+static int edit_fuel_pct(struct bomber *b)
+{
+	unsigned int v;
+	int rc;
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter fill level in percent, or 0 to cancel\n");
+	} while (rc);
+
+	if (v) {
+		b->tanks.pct = v;
+		putchar('>');
+		dump_fuel(b);
 	}
 	return 0;
 }
 
 static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
 {
+	bool sft = b->refit < REFIT_DOCTRINE && tn->sft;
+	bool cap = b->refit < REFIT_MOD;
 	int c;
 
-	if (b->refit >= REFIT_DOCTRINE) {
-		fprintf(stderr, "%s refit cannot change fuel.\n", describe_refit(b->refit));
-		return -EINVAL;
-	}
-	if (b->refit >= REFIT_MOD) {
-		if (!tn->sft) {
-			fprintf(stderr, "%s refit cannot change fuel.\n", describe_refit(b->refit));
-			return -EINVAL;
-		}
-		printf(">[R]egular or [S]elf-sealing, or 0 to cancel\n");
-	} else if (tn->sft) {
-		printf(">f[U]el capacity, [R]egular or [S]elf-sealing, or 0 to cancel\n");
-	} else {
-		printf(">f[U]el capacity, or 0 to cancel\n");
-	}
+	putchar('>');
+	if (cap)
+		printf("f[U]el capacity, ");
+	printf("fuel [P]ercent, ");
+	if (sft)
+		printf("[R]egular or [S]elf-sealing, ");
+	printf("or 0 to cancel\n");
 
 	do {
 		c = getchar();
@@ -1056,25 +1116,27 @@ static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
 		switch (c) {
 		case 'u':
 		case 'U':
-			if (b->refit < REFIT_MOD)
+			if (cap)
 				return edit_fuel(b);
 			break;
+		case 'p':
+		case 'P':
+			return edit_fuel_pct(b);
 		case 'r':
 		case 'R':
 			b->tanks.sst = false;
 			putchar('>');
-			dump_elec_fuel(b);
+			dump_fuel(b);
 			return 0;
 		case 's':
 		case 'S':
-			if (tn->sft) {
+			if (sft) {
 				b->tanks.sst = true;
 				putchar('>');
-				dump_elec_fuel(b);
+				dump_fuel(b);
 				return 0;
 			}
-			fprintf(stderr, "Self sealing tanks not developed yet!\n");
-			return -EINVAL;
+			break;
 		default:
 			break;
 		}
@@ -1125,7 +1187,7 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 		if (b->crew.men[i].gun)
 			printf("C*%c", i + '1');
 	}
-	printf("BB%u\n", b->bay.cap);
+	printf("BB%u\n", b->bay.load);
 	switch (b->bay.girth) {
 	case BB_SMALL:
 		printf("BGS");
@@ -1139,9 +1201,12 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 	default:
 		return -EINVAL;
 	}
+	if (b->bay.cap != b->bay.load)
+		printf("BP%u\n", b->bay.cap);
 	printf("B%c", b->bay.csbs ? 'C' : 'R');
 	printf("U%c", b->tanks.sst ? 'S' : 'R');
-	printf("UU%u\n", b->tanks.ht);
+	printf("UU%u\n", b->tanks.hlb);
+	printf("UP%u\n", b->tanks.pct);
 	return 0;
 }
 

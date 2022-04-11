@@ -22,8 +22,9 @@ void init_bomber(struct bomber *b, struct manf *m, struct engine *e)
 	b->crew.n = 2;
 	b->crew.men[0] = (struct crewman){.pos = CCLASS_P};
 	b->crew.men[1] = (struct crewman){.pos = CCLASS_N};
-	b->bay.cap = 1000;
-	b->tanks.ht = 60;
+	b->bay.load = b->bay.cap = 1000;
+	b->tanks.hlb = 19;
+	b->tanks.pct = 80;
 }
 
 static void design_error(struct bomber *b, const char *format, ...)
@@ -115,7 +116,7 @@ static int calc_engines(struct bomber *b)
 			design_error(b, "Four-engined bombers not developed yet!\n");
 	}
 	e->scl = e->typ->scl;
-	e->fuelrate = e->number * e->typ->bhp * 0.36f;
+	e->fuelrate = e->number * e->typ->bhp * 0.4f;
 	mounts = e->number;
 	if (e->odd)
 		mounts -= 0.25f;
@@ -374,6 +375,8 @@ static int calc_bombbay(struct bomber *b)
 	if (b->refit && a->cap != b->parent->bay.cap)
 		design_error(b, "Bombbay capacity changed in %s refit!\n",
 			     describe_refit(b->refit));
+	if (a->load > a->cap) /* Is this plane a TARDIS? */
+		design_error(b, "Bomb load exceeds bombbay capacity!\n");
 	if (b->refit && a->girth != b->parent->bay.girth)
 		design_error(b, "Bombbay girth changed in %s refit!\n",
 			     describe_refit(b->refit));
@@ -488,22 +491,22 @@ static int calc_tanks(struct bomber *b)
 	const struct tech_numbers *tn = &b->tn;
 	struct tanks *t = &b->tanks;
 
-	if (b->refit >= REFIT_MOD && t->ht != b->parent->tanks.ht)
+	if (b->refit >= REFIT_MOD && t->hlb != b->parent->tanks.hlb)
 		design_error(b, "Fuel capacity changed in %s refit!\n",
 			     describe_refit(b->refit));
-	if (b->refit == REFIT_MOD) {
-		t->mass = b->parent->tanks.mass;
-		t->hours = t->mass / b->engines.fuelrate;
-	} else {
-		t->hours = t->ht / 10.0f;
-		t->mass = b->engines.fuelrate * t->hours;
-	}
-	t->tare = t->mass * (tn->fut / 1000.0f);
+	if (t->pct > 100) /* Is this plane a TARDIS? */
+		design_error(b, "Fuel tanks more than 100%% full!\n");
+	t->cap = t->hlb * 100.0f;
+	t->mass = t->hlb * t->pct;
+	t->hours = t->mass / b->engines.fuelrate;
+	t->tare = t->cap * (tn->fut / 1000.0f);
 	t->cost = t->tare * (tn->fuc / 100.0f);
 	/* Wing thickness scales linearly with chord, so volume (which
 	 * is what matters for fuel storage) scales with area * chord
+	 * Tank ullage volume is full of petrol fumes so contributes to
+	 * vulnerability too
 	 */
-	t->ratio = t->mass * 1.45f / max(b->wing.area * b->wing.chord, 1.0f);
+	t->ratio = t->cap * 1.45f / max(b->wing.area * b->wing.chord, 1.0f);
 	if (t->ratio > (t->sst ? 2.5f : 2.0f))
 		design_warning(b, "Wing is crammed with fuel, vulnerability high.\n");
 	t->vuln = t->ratio * tn->fuv / 400.0f;
@@ -591,10 +594,10 @@ static int calc_ceiling(struct bomber *b)
 	unsigned int alt; // units of 500ft
 	float tim = 0; // minutes
 
-	for (alt = 0; alt <= 70; alt++) {
+	for (alt = 0; alt < 70; alt++) {
 		float c = climb_rate(b, alt * 0.5f);
 
-		if (c < 520.0f)
+		if (c < 480.0f)
 			break;
 		if (tim > tn->clt)
 			break;
@@ -612,8 +615,20 @@ static int calc_perf(struct bomber *b)
 	b->tare = b->core_tare + b->fuse.tare + b->tanks.tare +
 		  b->wing.tare * tn->fwt / 100.0f +
 		  b->engines.tare * tn->etf / 100.0f;
-	b->gross = b->tare + b->tanks.mass * 0.6f + b->turrets.ammo +
-		   b->crew.gross + b->bay.cap;
+	b->gross = b->tare + b->tanks.mass + b->turrets.ammo +
+		   b->crew.gross + b->bay.load;
+	if (b->refit < REFIT_MOD) {
+		b->mtow = ceil(b->gross);
+	} else {
+		b->mtow = b->parent->mtow;
+		if (floor(b->gross) > b->mtow)
+			design_error(b, "Exceeded MTOW of %ulb\n", b->mtow);
+	}
+	/* Gross weight with everything filled up to maximum.
+	 * Used for development time calculations.
+	 */
+	b->overgross = b->tare + b->tanks.cap + b->turrets.ammo +
+		       b->crew.gross + b->bay.cap;
 	b->wing.wl = b->gross / max(b->wing.area, 1.0f);
 	b->wing.drag = b->gross / max(b->wing.ld, 1.0f);
 	b->fuse.drag = sqrt(b->tare - b->wing.tare) *
@@ -638,11 +653,10 @@ static int calc_perf(struct bomber *b)
 	else if (b->init_climb < 640.0f)
 		design_warning(b, "Climb rate is very slow.\n");
 	b->deck_spd = airspeed(b, 0.0f);
-	b->ferry = b->tanks.hours * b->cruise_spd;
-	b->range = max(b->ferry * 0.6f - 150.0f, 0.0f);
-	if (b->range < 300.0f)
+	b->range = max(b->tanks.hours * 0.45f * b->cruise_spd - 20.0f, 0.0f);
+	if (b->range < 200.0f)
 		design_error(b, "Range is far too low!\n");
-	else if (b->range < 500.0f)
+	else if (b->range < 320.0f)
 		design_warning(b, "Range is on the low side.\n");
 	return 0;
 }
@@ -700,21 +714,24 @@ static int calc_combat(struct bomber *b)
 static int calc_cost(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
+	float structure_cost;
 
 	b->core_cost = (b->core_tare + b->crew.cct) *
 		       (b->manf->acc / 100.0f) *
 		       (tn->cc[b->fuse.typ] / 100.0f) *
 		       (b->engines.number > 2 ? 2.0f : 1.0f);
-	b->cost = b->engines.cost + b->turrets.cost + b->core_cost +
-		  b->bay.cost + b->fuse.cost + b->wing.cost +
+	structure_cost = b->core_cost + b->bay.cost + b->fuse.cost +
+			 b->wing.cost;
+	structure_cost *= powf(b->mtow * 0.5f / b->tare, 2);
+	b->cost = b->engines.cost + b->turrets.cost + structure_cost +
 		  b->elec.cost + b->elec.ncost + b->tanks.cost;
 	return 0;
 }
 
 static int calc_dev(struct bomber *b)
 {
-	float base_tproto = powf(b->gross, 0.3f) * powf(b->cost, 0.2f);
-	float base_tprod = powf(b->gross, 0.4f) * powf(b->cost, 0.2f);
+	float base_tproto = powf(b->overgross, 0.3f) * powf(b->cost, 0.2f);
+	float base_tprod = powf(b->overgross, 0.4f) * powf(b->cost, 0.2f);
 	float add_tproto = 0.0f, add_tprod = 0.0f;
 	unsigned int pcount[CREW_CLASSES];
 	unsigned int count[CREW_CLASSES];
@@ -774,7 +791,7 @@ static int calc_dev(struct bomber *b)
 			add_tproto += b->elec.cost * 5.0f;
 			add_tprod += b->elec.cost * 7.0f;
 		}
-		if (b->tanks.mass > b->parent->tanks.mass) {
+		if (b->tanks.cap > b->parent->tanks.cap) {
 			add_tproto += b->tanks.cost * 0.5f;
 			add_tprod += b->tanks.cost * 0.8f;
 		}
