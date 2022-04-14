@@ -6,9 +6,6 @@
 #include "calc.h"
 #include "edit.h"
 
-#define min(a, b)	((a) < (b) ? (a) : (b))
-#define max(a, b)	((a) < (b) ? (b) : (a))
-
 void init_bomber(struct bomber *b, struct manf *m, struct engine *e)
 {
 	memset(b, 0, sizeof(*b));
@@ -547,6 +544,13 @@ static float engine_power(const struct engines *e, float alt)
 	return e->power_factor * e->typ->bhp * max(msp, fsp);
 }
 
+float wing_lift(const struct wing *w, float v)
+{
+	float u = v * 22.0f / 15.0f; /* convert mph to ft/s */
+
+	return 0.5f * w->cl * 0.0075f * u * u * w->area;
+}
+
 /* lift in lbf, altitude in thousands ft */
 static float wing_minv(const struct wing *w, float lift, float alt)
 {
@@ -610,6 +614,7 @@ static int calc_ceiling(struct bomber *b)
 static int calc_perf(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
+	bool concrete = tn->rcs;
 	int rc;
 
 	b->tare = b->core_tare + b->fuse.tare + b->tanks.tare +
@@ -637,10 +642,14 @@ static int calc_perf(struct bomber *b)
 	b->drag = b->wing.drag + b->fuse.drag + b->engines.drag +
 		  b->turrets.drag;
 	b->takeoff_spd = wing_minv(&b->wing, b->gross, 0.0f) * 1.6f;
-	if (b->takeoff_spd > 120.0f)
-		design_error(b, "Take-off speed is dangerously high!\n");
-	else if (b->takeoff_spd > 110.0f)
-		design_warning(b, "Take-off speed is worryingly high.\n");
+	if (concrete && floor(b->gross) > tn->rcg * 1000)
+		design_warning(b, "Gross weight too high for concrete runways, load will be reduced in service.\n");
+	else if (concrete && floor(b->takeoff_spd) > tn->rcs)
+		design_warning(b, "Take-off speed too high for concrete runways, load will be reduced in service.\n");
+	else if (floor(b->gross) > tn->rgg * 1000)
+		design_warning(b, "Gross weight too high for grass runways.\n");
+	else if (floor(b->takeoff_spd) > tn->rgs)
+		design_warning(b, "Take-off speed too high for grass runways.\n");
 	rc = calc_ceiling(b);
 	if (rc)
 		return rc;

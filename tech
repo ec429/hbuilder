@@ -10,6 +10,7 @@ _BT:t=Ngun:t=Nose:t=Chin:t=Dor1:t=Daf1:t=Vaf1:t=Ven1:t=Beam:t=Tail:t=Ta4e:GTF=75
 _IB:BTS=70:BTM=100:BTC=0:BMC=0:BBB=8:BBF=2:CSB=0:n=Internal Bay:y=0
 _ED:ESL=0:n=Engine Dynamo:y=0
 _BN:NAG=0:NAH=0:NAO=0:n=Basic Navigation:y=0
+_GR:RGS=90:RGG=50:RCS=0:RCG=0:n=Grass Runways:y=0
 FEB:G4T=180:G4C=100:n=Four Engined Bombers:y=1940
 MFE:G4T=80:G4C=95:r=FEB:n=Mature Four-Engine Layout:y=1942
 CRS:CMI=170:CES=110:CCC=105:n=Crew Stations:y=1940
@@ -59,3 +60,6 @@ CSB:CSB=1:n=Course-Setting Bombsight:y=1942
 GEE:NAG=1:r=HPE:n=Hyperbolic Navigation:y=1942
 H2S:NAH=1:r=SVS:n=Terrain Radar:y=1943
 OBO:NAO=1:r=SVS:n=Ranging Transponder:y=1942
+IGR:RGS=98:RGG=50:n=Improved Grass Runways:y=1939
+CCR:RGS=100:RGG=60:RCS=106:RCG=70:r=IGR:n=Concrete Runways:y=1940
+ICR:RCS=110:RCG=75:r=CCR:n=Improved Concrete Runways:y=1941

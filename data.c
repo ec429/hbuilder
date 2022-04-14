@@ -480,6 +480,10 @@ static int load_tech_word(const char *key, const char *value, void *data)
 	INT_KEY(loader->tech, "NAG", num.na[NA_GEE]);
 	INT_KEY(loader->tech, "NAH", num.na[NA_H2S]);
 	INT_KEY(loader->tech, "NAO", num.na[NA_OBOE]);
+	INT_KEY(loader->tech, "RGS", num.rgs);
+	INT_KEY(loader->tech, "RGG", num.rgg);
+	INT_KEY(loader->tech, "RCS", num.rcs);
+	INT_KEY(loader->tech, "RCG", num.rcg);
 	if (!strcmp(key, "e")) {
 		struct engine *eng;
 		unsigned int i;

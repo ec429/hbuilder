@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include "data.h"
 
+#define min(a, b)	((a) < (b) ? (a) : (b))
+#define max(a, b)	((a) < (b) ? (b) : (a))
+
 struct engines {
 	/* Inputs */
 	unsigned int number;
@@ -207,4 +210,5 @@ void count_crew(const struct crew *c, unsigned int *v);
 void init_bomber(struct bomber *b, struct manf *m, struct engine *e);
 int calc_bomber(struct bomber *b, struct tech_numbers *tn);
 
+float wing_lift(const struct wing *w, float v);
 #endif // _CALC_H

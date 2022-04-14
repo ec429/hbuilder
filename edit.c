@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <errno.h>
+#include <math.h>
 #include "edit.h"
 
 static int enable_cbreak_mode(struct termios *old)
@@ -296,6 +297,16 @@ static void dump_bomber_calcs(struct bomber *b)
 	printf("Production in %.0f days for %.0f funds\n",
 	       b->tprod, b->cprod);
 	dump_bomber_ew(b);
+}
+
+static void dump_limits(struct bomber *b, struct tech_numbers *tn)
+{
+	printf("Structure m.g.t.o.w.: %ulb\n", b->mtow);
+	printf("Grass runways:    m.p.t.o.w. %u000lb; take-off speed %umph\n",
+	       tn->rgg, tn->rgs);
+	if (tn->rcs)
+		printf("Concrete runways: m.p.t.o.w. %u000lb; take-off speed %umph\n",
+		       tn->rcg, tn->rcs);
 }
 
 static int edit_manf(struct bomber *b, struct tech_numbers *tn,
@@ -1146,6 +1157,53 @@ static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
 	return -EIO;
 }
 
+static int auto_doctrine(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int mptow, mts, mtg;
+	bool concrete = tn->rcs;
+	int delta, c;
+
+	/* Not in DOCTRINE refit mode, go away */
+	if (b->refit < REFIT_DOCTRINE)
+		return -EINVAL;
+	if (concrete) {
+		printf(">[G]rass or [C]oncrete, or 0 to cancel\n");
+		do {
+			c = getchar();
+			if (c == EOF)
+				return -EIO;
+			if (c == '0') {
+				putchar('>');
+				return 0;
+			}
+
+			if (c == 'g' || c == 'G') {
+				concrete = false;
+				break;
+			}
+			if (c == 'c' || c == 'C') {
+				concrete = true;
+				break;
+			}
+			putchar('?');
+		} while (1);
+	}
+	mts = concrete ? tn->rcs : tn->rgs;
+	mtg = concrete ? tn->rcg : tn->rgg;
+	mptow = floor(wing_lift(&b->wing, mts / 1.6f));
+	mptow = min(mgtow, mtg * 1000);
+	mptow = min(mgtow, b->mtow);
+	delta = b->gross - mptow;
+	if ((int)b->bay.load < delta) {
+		fprintf(stderr, ">Too heavy\n");
+		return -ERANGE; /* Too heavy even without load */
+	}
+	b->bay.load = min(((int)b->bay.load) - delta, b->bay.cap);
+	putchar('>');
+	dump_bay_fuse(b);
+	return 0;
+}
+
 static int dump_block(struct bomber *b, const struct entities *ent)
 {
 	unsigned int i, j;
@@ -1438,6 +1496,16 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 			if (rc == 1) // QQ
 				return 1;
 			putchar('>');
+			break;
+		case 'v':
+		case 'V':
+			putchar('>');
+			putchar('\n');
+			dump_limits(b, tn);
+			continue;
+		case 'a':
+		case 'A':
+			rc = auto_doctrine(b, tn);
 			break;
 		case 'x':
 		case 'X':

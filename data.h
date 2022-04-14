@@ -170,6 +170,10 @@ struct tech_numbers {
 	unsigned int doctrine_block[0];
 	unsigned int clt; // CLimb Time
 	unsigned int bmc; // Bay, Medium, Cookie carriage (flag)
+	unsigned int rgs; // Max take-off speed, grass
+	unsigned int rgg; // Max gross take-off weight, grass
+	unsigned int rcs; // Max take-off speed, concrete
+	unsigned int rcg; // Max gross take-off weight, concrete
 };
 
 struct tech {

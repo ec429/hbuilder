@@ -167,6 +167,14 @@ For reference, from Lincolnshire to Berlin is about 600 miles as the crow
  flies (unlike the bomber, which follows a less straight route to confuse
  the defences and thus has a little more distance to cover).
 
+[V] will dump the currently applicable limits to take-off weight and speed.
+
+[A]uto-doctrine (only available in Doctrine refits) will set the bomb load
+ to the maximum that can be used with the current fuel load; besides bomb
+ bay capacity this may be limited by runway maximum permitted take-off
+ weight or take-off speed, or by the maximum gross take-off weight imposed
+ by the structure.
+
 [R]esearch doesn't edit the aircraft directly, rather it allows you to
  alter the technology levels used to calculate the design (which may also
  unlock various items in the editor such as engines, turrets, electric
