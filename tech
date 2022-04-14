@@ -35,8 +35,8 @@ VUR:e=Vul5:r=X24:n=Vulture Reliability:y=1942
 SAB:e=Sab5:r=X24:n=Evolved Sabre:y=1944
 V12:e=MeXX:n=V-12 Development:y=1941
 TSS:e=Mer6:r=V12:n=Two-Stage Supercharging:y=1942
-SLV:e=Her3:e=Cent:n=Sleeve Valve:y=1941
-RSV:e=HeXI:r=SLV:n=Reliable Sleeve Valve:y=1942
+SLV:e=Her3:e=Cent:n=Sleeve Valve:y=1940
+RSV:e=HeXI:r=SLV:n=Reliable Sleeve Valve:y=1941
 SVG:e=He18:e=Cen7:r=RSV:n=Sleeve Valve Growth:y=1943
 TRR:e=Deer:n=Triple-Row Radials:y=1941
 CLE:EDF=90:EMC=110:n=Clean Entry:y=1942
@@ -54,9 +54,9 @@ TUF:GDF=18:n=Turret Fairings:y=1942
 LAT:GAM=160:GAC=24:n=Lightweight Ammo Tracks:y=1941
 HCB:BTM=90:BMC=1:n=High Capacity Bombs:y=1940
 BCE:BTS=55:n=Bomb Cells:y=1940
-LBB:BTC=110:BBF=3:r=HCB:n=Large Bomb Bay:y=1941
-BBS:BTM=80:BTC=100:BBB=10:r=LBB:n=Bomb Bay Structures:y=1942
-CSB:CSB=1:n=Course-Setting Bombsight:y=1942
+LBB:BTC=110:BBF=3:r=HCB:n=Large Bomb Bay:y=1940
+BBS:BTM=80:BTC=100:BBB=10:r=LBB:n=Bomb Bay Structures:y=1941
+CSB:CSB=1:n=Mark XIV Course-Setting Bombsight:y=1942
 GEE:NAG=1:r=HPE:n=Hyperbolic Navigation:y=1942
 H2S:NAH=1:r=SVS:n=Terrain Radar:y=1943
 OBO:NAO=1:r=SVS:n=Ranging Transponder:y=1942
