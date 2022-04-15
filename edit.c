@@ -1191,8 +1191,8 @@ static int auto_doctrine(struct bomber *b, struct tech_numbers *tn)
 	mts = concrete ? tn->rcs : tn->rgs;
 	mtg = concrete ? tn->rcg : tn->rgg;
 	mptow = floor(wing_lift(&b->wing, mts / 1.6f));
-	mptow = min(mgtow, mtg * 1000);
-	mptow = min(mgtow, b->mtow);
+	mptow = min(mptow, mtg * 1000);
+	mptow = min(mptow, b->mtow);
 	delta = b->gross - mptow;
 	if ((int)b->bay.load < delta) {
 		fprintf(stderr, ">Too heavy\n");
@@ -1367,10 +1367,8 @@ static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
 		c = getchar();
 		if (c == EOF)
 			break;
-		if (c == '0') {
-			putchar('>');
+		if (c == '0')
 			return 0;
-		}
 
 		switch (c) {
 		case 'k':

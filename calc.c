@@ -644,11 +644,11 @@ static int calc_perf(struct bomber *b)
 	b->takeoff_spd = wing_minv(&b->wing, b->gross, 0.0f) * 1.6f;
 	if (concrete && floor(b->gross) > tn->rcg * 1000)
 		design_warning(b, "Gross weight too high for concrete runways, load will be reduced in service.\n");
-	else if (concrete && floor(b->takeoff_spd) > tn->rcs)
+	else if (concrete && b->takeoff_spd - 0.1 > tn->rcs)
 		design_warning(b, "Take-off speed too high for concrete runways, load will be reduced in service.\n");
 	else if (floor(b->gross) > tn->rgg * 1000)
 		design_warning(b, "Gross weight too high for grass runways.\n");
-	else if (floor(b->takeoff_spd) > tn->rgs)
+	else if (b->takeoff_spd - 0.1 > tn->rgs)
 		design_warning(b, "Take-off speed too high for grass runways.\n");
 	rc = calc_ceiling(b);
 	if (rc)
