@@ -768,6 +768,9 @@ static int calc_dev(struct bomber *b)
 			if (b->engines.typ == b->parent->engines.mou) {
 				add_tproto *= 0.1f;
 				add_tprod *= 0.1f;
+			} else if (b->engines.egg && b->parent->engines.egg) {
+				add_tproto *= 0.6f;
+				add_tprod *= 0.6f;
 			}
 		}
 		for (i = LXN_NOSE; i < LXN_COUNT; i++)
@@ -815,6 +818,10 @@ static int calc_dev(struct bomber *b)
 				      powf(b->engines.cost, 0.4f) * 0.06f;
 			add_tprod += powf(b->engines.tare, 0.8f) *
 				    powf(b->engines.cost, 0.4f) * 0.032f;
+		}
+		if (b->engines.egg && b->parent->engines.egg) {
+			add_tproto *= 0.6f;
+			add_tprod *= 0.6f;
 		}
 		b->tproto = base_tproto * 7.0f / bof +
 			    sqrt(add_tproto) * 100.0f / bof;

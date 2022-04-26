@@ -396,11 +396,14 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 	} else if (b->refit >= REFIT_MOD) {
 		fprintf(stderr, "%s refit cannot change engines.\n", describe_refit(b->refit));
 		return -EINVAL;
-	} else if (b->refit) {
-		/* Mark can change type but not number */
-		printf(">Select engine, @ for mounts, or 0 to cancel\n");
 	} else {
-		printf(">Select engine, @ for mounts, number, or 0 to cancel\n");
+		printf(">Select engine, @ for mounts, ");
+		if (tn->ees)
+			printf("+/- for power egg, ");
+		/* Mark can change type but not number */
+		if (!b->refit)
+			printf("number, ");
+		printf("or 0 to cancel\n");
 	}
 	for (i = 0; i < ent->neng; i++) {
 		const struct engine *e = ent->eng[i];
@@ -422,6 +425,18 @@ static int edit_eng(struct bomber *b, struct tech_numbers *tn,
 
 		if (c == '@' && b->refit < REFIT_MOD)
 			return edit_eng_mount(b, tn, ent);
+		if (c == '+' && tn->ees) {
+			b->engines.egg = true;
+			putchar('>');
+			dump_engines(b);
+			return 0;
+		}
+		if (c == '-') {
+			b->engines.egg = false;
+			putchar('>');
+			dump_engines(b);
+			return 0;
+		}
 		i = c - '0';
 		if (i >= 1 && i < 9 && !b->refit) {
 			b->engines.number = i;
@@ -1229,6 +1244,7 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 		for (i = 0; i < ent->neng; i++)
 			if (b->engines.mou == ent->eng[i])
 				printf("E@%c", i + 'A');
+	printf("E%c", b->engines.egg ? '+' : '-');
 	for (i = LXN_NOSE; i < LXN_COUNT; i++) {
 		for (j = 0; j < ent->ngun; j++)
 			if (b->turrets.typ[i] == ent->gun[j])

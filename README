@@ -88,6 +88,10 @@ You can also overbuild the mounts for a later (possibly not-yet-unlocked)
  engine, to facilitate changing to the later engine in refits.  Press [@]
  for a list of mount options to select from.  Note that changing the engine
  type will reset the mount type to match it.
+If Power Egg mounts have been developed, you can enable them with [+] or
+ disable with [-].  They slightly improve serviceability and reduce cost,
+ but have a small tare weight penalty.  They also reduce the development
+ time for changing engine type in refits.
 
 [T]urrets displays available turrets to add, selected with letter keys;
  also existing turrets to remove, selected with number keys.  As usual, 0
