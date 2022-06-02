@@ -8,6 +8,7 @@ const char *describe_esl(enum elec_level esl);
 const char *describe_navaid(enum nav_aid na);
 const char *describe_refit(enum refit_level refit);
 char crew_to_letter(enum crewpos c);
+enum crewpos letter_to_crew(char c);
 
 int editor(struct bomber *b, struct tech_numbers *tn,
 	   const struct entities *ent);

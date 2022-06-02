@@ -35,7 +35,7 @@ int for_each_line(int fd, int (*cb)(const char *line, void *data), void *data)
 			}
 			line[len] = 0;
 			rc = cb(line + to, data);
-			if (rc < 0)
+			if (rc)
 				goto out;
 			count++;
 			to = len + 1;

@@ -123,7 +123,7 @@ char crew_to_letter(enum crewpos c)
 	}
 }
 
-static enum crewpos letter_to_crew(char c)
+enum crewpos letter_to_crew(char c)
 {
 	switch (c) {
 	case 'P':
@@ -1458,6 +1458,38 @@ static int do_save(const struct bomber *b)
 	return rc;
 }
 
+static int do_load(struct bomber *b, const struct entities *ent)
+{
+	char fn[80];
+	FILE *fp;
+	size_t l;
+	int rc;
+
+	printf(">Enter filename, or empty string to cancel\n>");
+	if (!fgets(fn, sizeof(fn), stdin))
+		return -EIO;
+	if (!*fn)
+		return 0; /* cancelled */
+	/* kill trailing newline */
+	l = strlen(fn);
+	if (fn[l - 1] == '\n')
+		fn[l - 1] = 0;
+	fp = fopen(fn, "r");
+	if (!fp) {
+		rc = -errno;
+		perror("fopen");
+		return rc;
+	}
+	rc = load_design(fp, b, ent);
+	fclose(fp);
+	if (rc < 0)
+		fprintf(stderr, "Load failed: %s\n",
+			b->new ? b->ew[0] : strerror(-rc));
+	else
+		putchar('>');
+	return rc;
+}
+
 static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		     const struct entities *ent)
 {
@@ -1540,6 +1572,20 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 's':
 		case 'S':
 			rc = do_save(b);
+			break;
+		case 'o':
+		case 'O':
+			/* Can't [O]pen while inside a refit.
+			 * Ideally we'd like to unwind the stack instead
+			 * and do the [O]pen from the outermost edit_loop,
+			 * but that's a bunch of extra work that won't be
+			 * meaningful within the game.
+			 */
+			if (b->refit) {
+				putchar('?');
+				continue;
+			}
+			rc = do_load(b, ent);
 			break;
 		case 'r':
 		case 'R':

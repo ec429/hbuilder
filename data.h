@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include "list.h"
 
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof(*x))
+
 enum turret_location {
 	LXN_UNSPEC,
 	LXN_NOSE,

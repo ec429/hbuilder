@@ -10,8 +10,6 @@
 #include "data.h"
 #include "parse.h"
 
-#define ARRAY_SIZE(x)	(sizeof(x) / sizeof(*x))
-
 #define INT_KEY(obj, kn, vn)						\
 	if (!strcmp(key, kn)) {						\
 		if (sscanf(value, "%u", &obj->vn) != 1)			\
