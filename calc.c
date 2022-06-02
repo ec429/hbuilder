@@ -825,6 +825,25 @@ static int calc_dev(struct bomber *b)
 			add_tproto *= 0.6f;
 			add_tprod *= 0.6f;
 		}
+		for (i = LXN_NOSE; i < LXN_COUNT; i++)
+			if (b->turrets.typ[i] != b->parent->turrets.typ[i]) {
+				const struct turret *t = b->turrets.typ[i];
+				const struct turret *p = b->parent->turrets.typ[i];
+
+				if (t) {
+					/* turret added or replaced */
+					add_tproto += powf(t->twt, 0.6f);
+					add_tprod += powf(t->twt, 0.8f) * 0.6f;
+				} else {
+					/* turret removed */
+					add_tproto += powf(p->twt, 0.6f) * 0.2f;
+					add_tprod += powf(p->twt, 0.8f) * 0.12f;
+				}
+			}
+		if (b->bay.csbs && !b->parent->bay.csbs) {
+			add_tproto += 4;
+			add_tprod += 4;
+		}
 		b->tproto = base_tproto * 7.0f / bof +
 			    sqrt(add_tproto) * 100.0f / bof;
 		b->tprod = base_tprod * 7.0f / bof +
