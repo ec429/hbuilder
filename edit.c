@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <math.h>
 #include "edit.h"
+#include "save.h"
 
 static int enable_cbreak_mode(struct termios *old)
 {
@@ -102,7 +103,7 @@ const char *describe_refit(enum refit_level refit)
 }
 
 
-static char crew_to_letter(enum crewpos c)
+char crew_to_letter(enum crewpos c)
 {
 	switch (c) {
 	case CCLASS_P:
@@ -258,7 +259,7 @@ static void dump_bomber_info(struct bomber *b)
 		printf("Design contains warnings!  Consider reviewing [X].\n");
 }
 
-static void dump_bomber_ew(struct bomber *b)
+static void dump_bomber_ew(const struct bomber *b)
 {
 	unsigned int i;
 
@@ -1422,6 +1423,40 @@ static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
 	return -EIO;
 }
 
+static int do_save(const struct bomber *b)
+{
+	char fn[80];
+	FILE *fp;
+	size_t l;
+	int rc;
+
+	if (b->error) {
+		/* Errors, can't save */
+		putchar('>');
+		putchar('\n');
+		dump_bomber_ew(b);
+		return -EINVAL;
+	}
+
+	printf(">Enter filename, or empty string to cancel\n>");
+	if (!fgets(fn, sizeof(fn), stdin))
+		return -EIO;
+	if (!*fn)
+		return 0; /* cancelled */
+	/* kill trailing newline */
+	l = strlen(fn);
+	if (fn[l - 1] == '\n')
+		fn[l - 1] = 0;
+	fp = fopen(fn, "w");
+	if (!fp)
+		return -errno;
+	rc = save_design(fp, b);
+	fclose(fp);
+	if (!rc)
+		putchar('>');
+	return rc;
+}
+
 static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		     const struct entities *ent)
 {
@@ -1501,6 +1536,10 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 			if (rc)
 				putchar('?');
 			continue;
+		case 's':
+		case 'S':
+			rc = do_save(b);
+			break;
 		case 'r':
 		case 'R':
 			rc = edit_tech(tn, ent);

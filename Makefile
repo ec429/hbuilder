@@ -1,7 +1,7 @@
 all: hbuilder
 
 CFLAGS := -Wall -Werror -g
-OBJS := data.o calc.o edit.o
+OBJS := data.o calc.o edit.o save.o
 
 hbuilder: main.o $(OBJS)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $< $(OBJS) -o $@ -lm $(LDFLAGS)
@@ -11,6 +11,8 @@ hbuilder: main.o $(OBJS)
 
 calc.o: data.h edit.h
 
-edit.o: calc.h data.h
+edit.o: calc.h data.h save.h
+
+save.o: calc.h data.h edit.h
 
 main.o: $(OBJS:.o=.h) list.h
