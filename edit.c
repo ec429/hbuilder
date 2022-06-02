@@ -762,6 +762,7 @@ static int edit_crew(struct bomber *b, struct tech_numbers *tn)
 		pos = letter_to_crew(c);
 		if (b->crew.n < MAX_CREW && pos < CREW_CLASSES &&
 		    can_add[pos]) {
+			m = b->crew.men;
 			for (i = b->crew.n; i > 0; i--) {
 				m = &b->crew.men[i - 1];
 				m[1] = m[0];
