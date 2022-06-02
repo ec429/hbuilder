@@ -1,4 +1,4 @@
-_MB:G4T=0:G4C=0:n=Medium Bombers:y=0
+_MB:G4T=0:G4C=0:UBL=0:n=Medium Bombers:y=0
 _CA:CMI=165:CES=100:CCC=100:n=Crew Accommodation:y=0
 _PD:CLT=20:n=Pre-War Doctrine:y=0
 _BF:FTN=150:FTT=100:FTS=90:FTG=170:FDN=50:FDT=40:FDS=72:FDG=54:FWT=135:FSN=30:FST=64:FSS=27:FSG=20:FFN=30:FFT=40:FFS=27:FFG=20:FVN=20:FVT=30:FVS=20:FVG=8:n=Basic Fuselages:y=0
@@ -63,3 +63,4 @@ OBO:NAO=1:r=SVS:n=Ranging Transponder:y=1942
 IGR:RGS=98:RGG=50:n=Improved Grass Runways:y=1939
 CCR:RGS=100:RGG=60:RCS=106:RCG=70:r=IGR:n=Concrete Runways:y=1940
 ICR:RCS=110:RCG=75:r=CCR:n=Improved Concrete Runways:y=1941
+UAB:UBL=2:n=Unarmed Bomber:y=1940

@@ -186,6 +186,8 @@ static int calc_turrets(struct bomber *b)
 		for (j = 0; j < GC_COUNT; j++)
 			t->gc[j] += g->gc[j] / 10.0f;
 	}
+	if (!t->need_gunners && b->engines.number > tn->ubl)
+		design_error(b, "The Air Ministry will not allow an unarmed bomber of this size!\n");
 	t->serv = 1.0f - t->serv;
 	t->rate[0] = t->rate[1] = 0;
 	for (j = 0; j < GC_COUNT; j++) {

@@ -411,6 +411,7 @@ static int load_tech_word(const char *key, const char *value, void *data)
 	INT_KEY(loader->tech, "RGG", num.rgg);
 	INT_KEY(loader->tech, "RCS", num.rcs);
 	INT_KEY(loader->tech, "RCG", num.rcg);
+	INT_KEY(loader->tech, "UBL", num.ubl);
 	if (!strcmp(key, "e")) {
 		struct engine *eng;
 		unsigned int i;
