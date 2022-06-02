@@ -333,8 +333,5 @@ int load_design(FILE *f, struct bomber *b, const struct entities *ent)
 		return -EBADF;
 	}
 	rc = for_each_line(fd, load_design_line, &l);
-	/* We may have stopped on an EOD key (instead of hitting EOF).
-	 * Note that for_each_line() may have read() beyond that point.
-	 */
 	return rc > 0 ? 0 : rc;
 }

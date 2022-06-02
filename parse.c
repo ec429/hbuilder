@@ -35,8 +35,11 @@ int for_each_line(int fd, int (*cb)(const char *line, void *data), void *data)
 			}
 			line[len] = 0;
 			rc = cb(line + to, data);
-			if (rc)
+			if (rc) {
+				/* Reposition to un-consume subsequent lines */
+				lseek(fd, len + 1 - from - bytes, SEEK_CUR);
 				goto out;
+			}
 			count++;
 			to = len + 1;
 		} while (1);
