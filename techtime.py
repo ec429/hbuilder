@@ -51,6 +51,10 @@ for k,v in techs.items():
     if not v['year']:
         have.add(k)
         print "Start:", v['name']
+for k,v in techs.items():
+    if k not in have and v['year'] < 1939:
+        have.add(k)
+        print "Start2:", v['name']
 m = 9
 y = 1939
 while y < 1945 or m < 5:
@@ -64,7 +68,7 @@ while y < 1945 or m < 5:
         if m < 7 or random.random() < 0.7:
             continue
         ayear = set(t for t in avail if techs[t]['year'] <= y + 1)
-    elif random.random() < 0.4:
+    elif random.random() < 0.3:
         continue
     if not ayear:
         continue
