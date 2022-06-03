@@ -1009,5 +1009,6 @@ int do_randomise(struct bomber *b)
 	CLAMP(manu, 5);
 	CLAMP(accu, 4);
 	#undef CLAMP
+	b->dice.rolled = true;
 	return 0;
 }

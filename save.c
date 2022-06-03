@@ -39,6 +39,9 @@ int save_design(FILE *f, const struct bomber *b)
 		b->tanks.sst ? 1 : 0);
 	fprintf(f, "MTW=%u\n", b->mtow);
 	fprintf(f, "RFL=%u\n", b->refit);
+	fprintf(f, "RND=%u:DRG=%d:SRV=%d:VUL=%d:MNU=%d:ACC=%d\n",
+		b->dice.rolled ? 1 : 0, b->dice.drag, b->dice.serv,
+		b->dice.vuln, b->dice.manu, b->dice.accu);
 	fprintf(f, "EOD\n");
 	return 0;
 }
@@ -61,10 +64,18 @@ static void load_error(struct loaddata *l, const char *format, ...)
 	l->b->error = true;
 }
 
-#define LOADER_INT(_name, _field)					\
+#define LOADER_UINT(_name, _field)					\
 static int load_##_name(const char *value, struct loaddata *l)		\
 {									\
 	if (sscanf(value, "%u", &l->b->_field) != 1)			\
+		return -EINVAL;						\
+	return 0;							\
+}
+
+#define LOADER_INT(_name, _field)					\
+static int load_##_name(const char *value, struct loaddata *l)		\
+{									\
+	if (sscanf(value, "%d", &l->b->_field) != 1)			\
 		return -EINVAL;						\
 	return 0;							\
 }
@@ -204,8 +215,8 @@ static int load_tur(const char *value, struct loaddata *l)
 	return 0;
 }
 
-LOADER_INT(win, wing.area);
-LOADER_INT(art, wing.art);
+LOADER_UINT(win, wing.area);
+LOADER_UINT(art, wing.art);
 
 static int load_crw(const char *value, struct loaddata *l)
 {
@@ -230,12 +241,12 @@ static int load_crw(const char *value, struct loaddata *l)
 	return 0;
 }
 
-LOADER_INT(bom, bay.load);
-LOADER_INT(cap, bay.cap);
-LOADER_INT(gir, bay.girth);
+LOADER_UINT(bom, bay.load);
+LOADER_UINT(cap, bay.cap);
+LOADER_UINT(gir, bay.girth);
 LOADER_BOOL(csb, bay.csbs);
-LOADER_INT(fus, fuse.typ);
-LOADER_INT(esl, elec.esl);
+LOADER_UINT(fus, fuse.typ);
+LOADER_UINT(esl, elec.esl);
 
 static int load_nav(const char *value, struct loaddata *l)
 {
@@ -257,11 +268,18 @@ static int load_nav(const char *value, struct loaddata *l)
 	return 0;
 }
 
-LOADER_INT(tan, tanks.hlb);
-LOADER_INT(pct, tanks.pct);
+LOADER_UINT(tan, tanks.hlb);
+LOADER_UINT(pct, tanks.pct);
 LOADER_BOOL(sst, tanks.sst);
-LOADER_INT(mtw, mtow);
-LOADER_INT(rfl, refit);
+LOADER_UINT(mtw, mtow);
+LOADER_UINT(rfl, refit);
+
+LOADER_BOOL(rnd, dice.rolled);
+LOADER_INT(drg, dice.drag);
+LOADER_INT(srv, dice.serv);
+LOADER_INT(vul, dice.vuln);
+LOADER_INT(mnu, dice.manu);
+LOADER_INT(acc, dice.accu);
 
 static int load_eod(const char *value, struct loaddata *l)
 {
@@ -295,6 +313,12 @@ struct loadkey {
 	{"SST", load_sst},
 	{"MTW", load_mtw},
 	{"RFL", load_rfl},
+	{"RND", load_rnd},
+	{"DRG", load_drg},
+	{"SRV", load_srv},
+	{"VUL", load_vul},
+	{"MNU", load_mnu},
+	{"ACC", load_acc},
 	{"EOD", load_eod},
 };
 

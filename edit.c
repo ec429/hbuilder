@@ -1387,6 +1387,7 @@ static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
 	int c;
 
 	b2.parent = b;
+	b2.dice.rolled = false;
 	printf(">Select refit level (mar[K], m[O]d, [D]octrine) or 0 to cancel\n");
 
 	do {

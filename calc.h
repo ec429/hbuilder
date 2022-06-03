@@ -157,6 +157,7 @@ enum refit_level {
 };
 
 struct randomisation {
+	bool rolled;
 	int drag;
 	int serv;
 	int vuln;
