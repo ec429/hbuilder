@@ -40,6 +40,12 @@ outputs, and subsequent outputs recalculated:
 * Manu: up to ±5% (FRESH) / ±2% (MARK)
 * Accu: up to ±4 (FRESH) / ±1 (MARK)
 
+Note that refits cannot take the total bonus/malus on any axis
+outside the range that would be possible for a fresh design.  Thus
+if e.g. the original design had a +5% drag modifier, a mark refit
+could have a drag modifier anywhere from +3% to +5%, but if +6% or
++7% were rolled it would be truncated to +5%.
+
 Prototyping takes time (and money), and so does tooling up for
 series production.  You can either order a design 'off the drawing
 board', running both processes in parallel, or prototype the design

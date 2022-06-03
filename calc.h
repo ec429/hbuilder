@@ -156,6 +156,14 @@ enum refit_level {
 	REFIT_LEVELS
 };
 
+struct randomisation {
+	int drag;
+	int serv;
+	int vuln;
+	int manu;
+	int accu;
+};
+
 #define MAX_EW	16
 #define EW_LEN	80
 struct bomber {
@@ -172,6 +180,7 @@ struct bomber {
 	struct tanks tanks;
 	enum refit_level refit;
 	struct tech_numbers tn;
+	struct randomisation dice;
 	/* Output cache */
 	bool error;
 	unsigned int new;
@@ -209,6 +218,7 @@ void count_crew(const struct crew *c, unsigned int *v);
 
 void init_bomber(struct bomber *b, struct manf *m, struct engine *e);
 int calc_bomber(struct bomber *b, struct tech_numbers *tn);
+int do_randomise(struct bomber *b);
 
 float wing_lift(const struct wing *w, float v);
 #endif // _CALC_H

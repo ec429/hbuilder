@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "data.h"
 #include "calc.h"
@@ -90,6 +92,8 @@ int main(void)
 		return 1;
 	}
 	fprintf(stderr, "Initialised tech state\n");
+
+	srand(time(NULL));
 
 	init_bomber(&b, list_first_entry(&manfs, struct manf),
 		    list_first_entry(&engines, struct engine));

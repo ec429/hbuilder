@@ -1622,6 +1622,12 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 			putchar('\n');
 			dump_bomber_ew(b);
 			continue;
+		case 'y':
+		case 'Y':
+			rc = do_randomise(b);
+			if (!rc)
+				putchar('>');
+			break;
 		default:
 			putchar('?');
 			continue;

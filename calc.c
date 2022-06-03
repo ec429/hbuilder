@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <errno.h>
@@ -643,6 +644,7 @@ static int calc_perf(struct bomber *b)
 		       (tn->fd[b->fuse.typ] / 10.0f);
 	b->drag = b->wing.drag + b->fuse.drag + b->engines.drag +
 		  b->turrets.drag;
+	b->drag *= (100 + b->dice.drag) / 100.0f;
 	b->takeoff_spd = wing_minv(&b->wing, b->gross, 0.0f) * 1.6f;
 	if (concrete && floor(b->gross) > tn->rcg * 1000)
 		design_warning(b, "Gross weight too high for concrete runways, load will be reduced in service.\n");
@@ -676,6 +678,8 @@ static int calc_rely(struct bomber *b)
 {
 	b->serv = 1.0f - (b->engines.serv * 6.0f + b->turrets.serv +
 			  b->fuse.serv + b->manf->svp / 100.0f);
+	b->serv += b->dice.serv / 100.0f;
+	b->serv = min(max(b->serv, 0.0f), 1.0f);
 	b->fail = b->engines.rely1 * 2.0f + b->engines.rely2 * 30.0f +
 		  b->fuse.fail;
 	if (b->crew.engineers)
@@ -691,6 +695,7 @@ static int calc_combat(struct bomber *b)
 	b->roll_pen = powf(b->wing.ar, 0.8f) * 0.7f;
 	b->turn_pen = sqrt(max(b->wing.wl - b->manf->tpl, 0.0f));
 	b->manu_pen = b->roll_pen + b->turn_pen;
+	b->manu_pen *= (100 + b->dice.manu) / 100.0f;
 	b->evade_factor = (max(33.0f - b->ceiling, 2.0f) / 13.0f) *
 			  powf(max(350.0f - b->cruise_spd, 30.0f) / 1.2f,
 			       0.45) *
@@ -698,6 +703,7 @@ static int calc_combat(struct bomber *b)
 	b->vuln = (b->engines.vuln + b->fuse.vuln) *
 		  max(3.8f - sqrt(b->crew.dc), 1.0f) +
 		  b->tanks.vuln;
+	b->vuln *= (100 + b->dice.vuln) / 100.0f;
 	b->flak_factor = b->vuln * 3.0f *
 			 sqrt(max(35.0f - b->ceiling, 2.0f) / 1.5f);
 	/* Looks backwards?  Lower is better for gunrate */
@@ -719,6 +725,7 @@ static int calc_combat(struct bomber *b)
 		  powf(b->cruise_spd, 0.6f) / 200.0f +
 		  sqrt(1.0f + b->elec.esl) * 0.12f +
 		  (b->bay.csbs ? 0.12f : 0.0f);
+	b->accu += b->dice.accu / 100.0f;
 	return 0;
 }
 
@@ -959,5 +966,48 @@ int calc_bomber(struct bomber *b, struct tech_numbers *tn)
 	if (rc)
 		return rc;
 
+	return 0;
+}
+
+/* Copied from Harris rand.c */
+static int irandu(int n)
+{
+	if(!n) return(0);
+	// This is poor quality randomness, but that doesn't really matter here
+	return(rand()%n);
+}
+
+/* Sets the random factors, to be picked up by subsequent recalcs */
+int do_randomise(struct bomber *b)
+{
+	switch (b->refit) {
+	case REFIT_FRESH:
+		b->dice.drag = irandu(11) - 5;
+		b->dice.serv = irandu(9) - 4;
+		b->dice.vuln = irandu(21) - 10;
+		b->dice.manu = irandu(11) - 5;
+		b->dice.accu = irandu(9) - 4;
+		break;
+	case REFIT_MARK:
+		b->dice.drag += irandu(5) - 2;
+		b->dice.serv += irandu(7) - 3;
+		b->dice.vuln += irandu(11) - 5;
+		b->dice.manu += irandu(5) - 2;
+		b->dice.accu += irandu(3) - 1;
+		break;
+	case REFIT_MOD:
+		b->dice.serv += irandu(5) - 2;
+		b->dice.vuln += irandu(5) - 2;
+		break;
+	default:
+		break;
+	}
+	#define CLAMP(f, v)	b->dice.f = min(max(b->dice.f, -v), v)
+	CLAMP(drag, 5);
+	CLAMP(serv, 4);
+	CLAMP(vuln, 10);
+	CLAMP(manu, 5);
+	CLAMP(accu, 4);
+	#undef CLAMP
 	return 0;
 }
