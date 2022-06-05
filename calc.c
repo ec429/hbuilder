@@ -816,6 +816,10 @@ static int calc_dev(struct bomber *b)
 			add_tproto += b->tanks.cost * 0.5f;
 			add_tprod += b->tanks.cost * 0.8f;
 		}
+		if (b->tanks.sst && !b->parent->tanks.sst) {
+			add_tproto += b->tanks.cost * 0.3f;
+			add_tprod += b->tanks.cost * 0.5f;
+		}
 		b->tproto += sqrt(add_tproto) * 100.0f / bof;
 		b->tprod += sqrt(add_tprod) * 100.0f / bof;
 		b->cproto += add_tproto;
@@ -850,6 +854,10 @@ static int calc_dev(struct bomber *b)
 		if (b->bay.csbs && !b->parent->bay.csbs) {
 			add_tproto += 4;
 			add_tprod += 4;
+		}
+		if (b->tanks.sst && !b->parent->tanks.sst) {
+			add_tproto += b->tanks.cost * 0.5f;
+			add_tprod += b->tanks.cost * 0.8f;
 		}
 		b->tproto = base_tproto * 7.0f / bof +
 			    sqrt(add_tproto) * 100.0f / bof;
