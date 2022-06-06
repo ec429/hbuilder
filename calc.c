@@ -759,8 +759,8 @@ static int calc_dev(struct bomber *b)
 	count_crew(&b->crew, count);
 	switch (b->refit) {
 	case REFIT_FRESH:
-		b->tproto = base_tproto * 100.0f / bof;
-		b->tprod = base_tprod * 60.0f / bof;
+		b->tproto = base_tproto * 90.0f / bof;
+		b->tprod = base_tprod * 40.0f / bof;
 		b->cproto = b->cost * 15.0f;
 		b->cprod = b->cost * 30.0f;
 		break;
