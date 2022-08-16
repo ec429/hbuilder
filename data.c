@@ -338,6 +338,7 @@ static int load_tech_word(const char *key, const char *value, void *data)
 	struct tech_loader *loader = data;
 
 	INT_KEY(loader->tech, "y", year);
+	INT_KEY(loader->tech, "m", month);
 	INT_KEY(loader->tech, "G4T", num.g4t);
 	INT_KEY(loader->tech, "G4C", num.g4c);
 	INT_KEY(loader->tech, "CMI", num.cmi);

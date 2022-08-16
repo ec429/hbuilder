@@ -182,7 +182,7 @@ struct tech_numbers {
 struct tech {
 	struct list_head list;
 	char ident[4];
-	unsigned int year;
+	unsigned int year, month;
 	struct tech_numbers num;
 	struct tech *req[8];
 	struct engine *eng[16];

@@ -7,13 +7,13 @@ Tech system
 At start of each month, presented with a list of available techs,
 defined by the following requirements:
 
-* Year of tech must be at most 6 months away
+* Date of tech must be at most 6 months away
 * Tech's prerequisites must all have been unlocked already
 
 Player is given three slots to fill with either a tech or a meta.
 
 * Meta 'Supporting Research' allows one other slot to hold a tech
-  from 'next year' (otherwise all techs must be this year or earlier)
+  from 'future' (otherwise all techs must be this month or earlier)
 * Meta 'Mothball Labs'
 * For each Type in production, meta 'Production Engineering'
 
@@ -69,3 +69,29 @@ are far quicker and cheaper to develop; you may (for instance)
 temporarily pause work on a Fresh design to quickly run through a
 refit of an old bomber, before resuming the fresh design from where
 you left off.
+
+Optionality
+-----------
+
+It has to still be an option to play without the tech/builder system
+and use the historical aircraft types.  But that means we will need
+to either reproduce them procedurally, or re-estimate the fuel/bomb
+tradeoff (to match what the doctriniser does) and write data for
+`fight_factor` and `flak_factor` — assuming we're going to switch the
+core game over to use separate flak and fighter defns (and two values
+for the latter, too, for Schräge).
+
+That switch-over is desirable, though, because it's already kind of
+silly that having good gun turrets improves a bomber's survivability
+against flak in the current Harris.
+
+In an ideal world, we'd even have doctrine to choose between high-
+and low-level flight; raids on the deck would have shorter range and
+would be at risk from light flak (depending on `manu_pen`) but heavy
+flak wouldn't be able to hit and fighters would have a difficult time
+spotting you (neither ground based nor airborne radar can pick you
+up, you won't be caught in searchlights, nor even silhouetted against
+a lit-up cloud etc.); also navigation might be more precise, at least
+on moonlit nights.  Unfortunately, attempts to make altitude affect
+range didn't go so well (can't balance the Whitley properly) so we
+might have to do without that piece.

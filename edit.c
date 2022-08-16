@@ -1343,7 +1343,10 @@ static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
 			else
 				s = '!';
 		}
-		printf("[%c] %c %s (%d)\n", l, s, t->name, t->year);
+		if (t->month)
+			printf("[%c] %c %s (%02u-%u)\n", l, s, t->name, t->month, t->year);
+		else
+			printf("[%c] %c %s (%u)\n", l, s, t->name, t->year);
 	}
 
 	do {
