@@ -159,6 +159,8 @@ static int calc_turrets(struct bomber *b)
 		struct turret *m = t->mou[i];
 		float tare;
 
+		if (m)
+			t->mtare += m->twt * (1.0f + tn->gtf / 100.0f);
 		if (!g)
 			continue;
 		if (!m) {
@@ -180,7 +182,6 @@ static int calc_turrets(struct bomber *b)
 		t->drag += g->drg * tn->gdf;
 		tare = g->twt + m->twt * tn->gtf / 100.0f;
 		t->tare += tare;
-		t->mtare += m->twt * (1.0f + tn->gtf / 100.0f);
 		t->ammo += g->gun * tn->gam;
 		t->serv *= 1.0f - g->srv / 1000.0f;
 		t->cost += 3.0f * tare + g->gun * tn->gcf / 10.0f + g->gun * tn->gac / 10.0f;
