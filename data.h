@@ -195,6 +195,8 @@ struct tech {
 	bool unlocked, have_reqs;
 };
 
+int try_load_tn_word(const char *key, const char *value,
+		     struct tech_numbers *tn);
 int load_techs(struct list_head *head, struct list_head *engines,
 	       struct list_head *guns);
 int free_techs(struct list_head *head);

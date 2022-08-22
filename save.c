@@ -5,6 +5,49 @@
 #include "edit.h"
 #include "parse.h"
 
+static void save_tn(FILE *f, const struct tech_numbers *tn)
+{
+	fprintf(f, "TN=1:FWT=%u:WTS=%u:WTC=%u:WTF=%u:WCF=%u:ETF=%u\n",
+		tn->fwt, tn->wts, tn->wtc, tn->wtf, tn->wcf, tn->etf);
+	fprintf(f, "TN=1:BTS=%u:BTM=%u:BTC=%u:BBB=%u:BBF=%u:UBL=%u\n",
+		tn->bt[BB_SMALL], tn->bt[BB_MEDIUM], tn->bt[BB_COOKIE],
+		tn->bbb, tn->bbf, tn->ubl);
+	fprintf(f, "TN=1:FTN=%u:FTT=%u:FTS=%u:FTG=%u\n",
+		tn->ft[FT_NORMAL], tn->ft[FT_SLENDER], tn->ft[FT_SLABBY],
+		tn->ft[FT_GEODETIC]);
+	fprintf(f, "TN=1:FDN=%u:FDT=%u:FDS=%u:FDG=%u\n",
+		tn->fd[FT_NORMAL], tn->fd[FT_SLENDER], tn->fd[FT_SLABBY],
+		tn->fd[FT_GEODETIC]);
+	fprintf(f, "TN=1:FSN=%u:FST=%u:FSS=%u:FSG=%u\n",
+		tn->fs[FT_NORMAL], tn->fs[FT_SLENDER], tn->fs[FT_SLABBY],
+		tn->fs[FT_GEODETIC]);
+	fprintf(f, "TN=1:FFN=%u:FFT=%u:FFS=%u:FFG=%u\n",
+		tn->ff[FT_NORMAL], tn->ff[FT_SLENDER], tn->ff[FT_SLABBY],
+		tn->ff[FT_GEODETIC]);
+	fprintf(f, "TN=1:FVN=%u:FVT=%u:FVS=%u:FVG=%u\n",
+		tn->fv[FT_NORMAL], tn->fv[FT_SLENDER], tn->fv[FT_SLABBY],
+		tn->fv[FT_GEODETIC]);
+	fprintf(f, "TN=1:CCN=%u:CCT=%u:CCS=%u:CCG=%u\n",
+		tn->cc[FT_NORMAL], tn->cc[FT_SLENDER], tn->cc[FT_SLABBY],
+		tn->cc[FT_GEODETIC]);
+	fprintf(f, "TN=1:FCN=%u:FCT=%u:FCS=%u:FCG=%u\n",
+		tn->fc[FT_NORMAL], tn->fc[FT_SLENDER], tn->fc[FT_SLABBY],
+		tn->fc[FT_GEODETIC]);
+	fprintf(f, "TN=1:WLD=%u:G4T=%u:G4C=%u:FUT=%u:FUV=%u:FUC=%u:FGV=%u\n",
+		tn->wld, tn->g4t, tn->g4c, tn->fut, tn->fuv, tn->fuc, tn->fgv);
+	fprintf(f, "TN=1:EDF=%u:EMC=%u:EES=%u:EET=%u:EEC=%u\n",
+		tn->edf, tn->emc, tn->ees, tn->eet, tn->eec);
+	fprintf(f, "TN=1:GTF=%u:GDF=%u:GCF=%u:ESL=%u:SFT=%u:SFV=%u:SFC=%u\n",
+		tn->gtf, tn->gdf, tn->gcf, tn->esl, tn->sft, tn->sfv, tn->sfc);
+	fprintf(f, "TN=1:CMI=%u:CES=%u:CCC=%u:GAM=%u:GAC=%u:CSB=%u\n",
+		tn->cmi, tn->ces, tn->ccc, tn->gam, tn->gac, tn->csb);
+	fprintf(f, "TN=1:NAG=%u:NAH=%u:NAO=%u:CLT=%u:BMC=%u\n",
+		tn->na[NA_GEE], tn->na[NA_H2S], tn->na[NA_OBOE],
+		tn->clt, tn->bmc);
+	fprintf(f, "TN=2:RGS=%u:RGG=%u:RCS=%u:RCG=%u\n",
+		tn->rgs, tn->rgg, tn->rcs, tn->rcg);
+}
+
 int save_design(FILE *f, const struct bomber *b)
 {
 	unsigned int i;
@@ -42,6 +85,7 @@ int save_design(FILE *f, const struct bomber *b)
 	fprintf(f, "RND=%u:DRG=%d:SRV=%d:VUL=%d:MNU=%d:ACC=%d\n",
 		b->dice.rolled ? 1 : 0, b->dice.drag, b->dice.serv,
 		b->dice.vuln, b->dice.manu, b->dice.accu);
+	save_tn(f, &b->tn);
 	fprintf(f, "EOD\n");
 	return 0;
 }
@@ -49,7 +93,7 @@ int save_design(FILE *f, const struct bomber *b)
 struct loaddata {
 	struct bomber *b;
 	const struct entities *ent;
-	unsigned int ei, ti;
+	unsigned int ei, ti, tn;
 };
 
 static void load_error(struct loaddata *l, const char *format, ...)
@@ -281,6 +325,13 @@ LOADER_INT(vul, dice.vuln);
 LOADER_INT(mnu, dice.manu);
 LOADER_INT(acc, dice.accu);
 
+static int load_tn(const char *value, struct loaddata *l)
+{
+	if (sscanf(value, "%u", &l->tn) != 1)
+		return -EINVAL;
+	return 0;
+}
+
 static int load_eod(const char *value, struct loaddata *l)
 {
 	if (value)
@@ -319,6 +370,7 @@ struct loadkey {
 	{"VUL", load_vul},
 	{"MNU", load_mnu},
 	{"ACC", load_acc},
+	{"TN", load_tn},
 	{"EOD", load_eod},
 };
 
@@ -327,6 +379,12 @@ static int load_design_word(const char *key, const char *value, void *data)
 	struct loaddata *l = data;
 	unsigned int i;
 
+	if (l->tn) {
+		if (!try_load_tn_word(key, value, &l->b->tn))
+			return 0;
+		load_error(l, "TN key %s not found!", key);
+		return -ENOENT;
+	}
 	for (i = 0; i < ARRAY_SIZE(loaders); i++)
 		if (!strcmp(key, loaders[i].key))
 			return loaders[i].fn(value, l);
@@ -338,7 +396,7 @@ static int load_design_line(const char *line, void *data)
 {
 	struct loaddata *l = data;
 
-	l->ei = l->ti = 0;
+	l->ei = l->ti = l->tn = 0;
 	return for_each_word(line, load_design_word, l);
 }
 
