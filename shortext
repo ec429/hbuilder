@@ -1,0 +1,7 @@
+FT.NOR:Normal fuselage design balances weight, drag and space.
+FT.SLE:A slender fuselage reduces drag, but is cramped and weak.
+FT.SLA:Slab-sided fuselages are draggy but cheap to build.
+FT.GEO:Geodetic fuselage structure is strong and light.
+BB.SMA:Sized to carry a multitude of small bombs internally.
+BB.MED:Can enclose small bombs, or carry cookies externally.
+BB.COO:Fully-enclosed carriage of large 'cookie' bombs.

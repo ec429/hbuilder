@@ -42,6 +42,7 @@ struct turret {
 	unsigned int slb;
 	unsigned int esl;
 	char *name;
+	char *desc;
 	bool unlocked;
 };
 
@@ -62,6 +63,7 @@ struct engine {
 	struct engine *u; /* can mod to us with overbuilt mounts */
 	char *manu;
 	char *name;
+	char *desc;
 	bool unlocked;
 };
 
@@ -93,6 +95,7 @@ struct manf {
 	unsigned int tpl, fd[FT_COUNT], ft[FT_COUNT], svp, bof;
 	char *eman; // engine manufacturer
 	char *name;
+	char *desc;
 };
 
 int load_manfs(struct list_head *head);
@@ -188,6 +191,7 @@ struct tech {
 	struct engine *eng[16];
 	struct turret *gun[16];
 	char *name;
+	char *desc;
 	bool unlocked, have_reqs;
 };
 

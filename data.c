@@ -43,6 +43,12 @@ static int load_gun_word(const char *key, const char *value, void *data)
 			return -ENOMEM;
 		return 0;
 	}
+	if (!strcmp(key, "d")) {
+		gun->desc = strdup(value);
+		if (!gun->desc)
+			return -ENOMEM;
+		return 0;
+	}
 
 	fprintf(stderr, "load_gun_word: unrecognised key '%s'\n", key);
 	return -EINVAL;
@@ -66,6 +72,7 @@ out:
 	if (rc) {
 		fprintf(stderr, "load_gun: failed to load %s\n", gun->ident);
 		free(gun->name);
+		free(gun->desc);
 		free(gun);
 	} else {
 		list_add_tail(head, &gun->list);
@@ -91,6 +98,7 @@ int free_guns(struct list_head *head)
 	while (!list_empty(head)) {
 		gun = list_first_entry(head, struct turret);
 		free(gun->name);
+		free(gun->desc);
 		list_del(&gun->list);
 		free(gun);
 	}
@@ -124,6 +132,12 @@ static int load_engine_word(const char *key, const char *value, void *data)
 	if (!strcmp(key, "n")) {
 		eng->name = strdup(value);
 		if (!eng->name)
+			return -ENOMEM;
+		return 0;
+	}
+	if (!strcmp(key, "d")) {
+		eng->desc = strdup(value);
+		if (!eng->desc)
 			return -ENOMEM;
 		return 0;
 	}
@@ -166,6 +180,7 @@ out:
 		fprintf(stderr, "load_engine: failed to load %s\n", eng->ident);
 		free(eng->manu);
 		free(eng->name);
+		free(eng->desc);
 		free(eng);
 	} else {
 		list_add_tail(head, &eng->list);
@@ -192,6 +207,7 @@ int free_engines(struct list_head *head)
 		eng = list_first_entry(head, struct engine);
 		free(eng->manu);
 		free(eng->name);
+		free(eng->desc);
 		list_del(&eng->list);
 		free(eng);
 	}
@@ -238,6 +254,12 @@ static int load_manf_word(const char *key, const char *value, void *data)
 			return -ENOMEM;
 		return 0;
 	}
+	if (!strcmp(key, "d")) {
+		man->desc = strdup(value);
+		if (!man->desc)
+			return -ENOMEM;
+		return 0;
+	}
 
 	fprintf(stderr, "load_manf_word: unrecognised key '%s'\n", key);
 	return -EINVAL;
@@ -273,6 +295,7 @@ static int load_manf(const char *line, void *data)
 		INIT_LIST_HEAD(&man->list);
 		man->eman = NULL;
 		man->name = NULL;
+		man->desc = NULL;
 	}
 	memcpy(man->ident, line, 2);
 	man->ident[2] = 0;
@@ -282,6 +305,7 @@ out:
 		fprintf(stderr, "load_manf: failed to load %s\n", man->ident);
 		free(man->eman);
 		free(man->name);
+		free(man->desc);
 		free(man);
 	} else if (star) {
 		loader->starman = man;
@@ -304,6 +328,7 @@ int load_manfs(struct list_head *head)
 	if (loader.starman) {
 		free(loader.starman->eman);
 		free(loader.starman->name);
+		free(loader.starman->desc);
 	}
 	free(loader.starman);
 	close(fd);
@@ -320,6 +345,7 @@ int free_manfs(struct list_head *head)
 		man = list_first_entry(head, struct manf);
 		free(man->eman);
 		free(man->name);
+		free(man->desc);
 		list_del(&man->list);
 		free(man);
 	}
@@ -473,6 +499,12 @@ static int load_tech_word(const char *key, const char *value, void *data)
 			return -ENOMEM;
 		return 0;
 	}
+	if (!strcmp(key, "d")) {
+		loader->tech->desc = strdup(value);
+		if (!loader->tech->desc)
+			return -ENOMEM;
+		return 0;
+	}
 
 	fprintf(stderr, "load_tech_word: unrecognised key '%s'\n", key);
 	return -EINVAL;
@@ -497,6 +529,7 @@ out:
 	if (rc) {
 		fprintf(stderr, "load_tech: failed to load %s\n", tech->ident);
 		free(tech->name);
+		free(tech->desc);
 		free(tech);
 	} else {
 		list_add_tail(loader->head, &tech->list);
@@ -528,6 +561,7 @@ int free_techs(struct list_head *head)
 	while (!list_empty(head)) {
 		tech = list_first_entry(head, struct tech);
 		free(tech->name);
+		free(tech->desc);
 		list_del(&tech->list);
 		free(tech);
 	}
