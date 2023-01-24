@@ -22,8 +22,12 @@ have its effect applied, as follows:
 
 * A tech: will be unlocked
 * Supporting Research: will do nothing
+  - maybe it should remove the date-lock on whatever tech you were
+    using it to support?
 * Mothball Labs: will increase the budget (cshr)
+  - by 4800 in 1939, plus 400 each year?
 * Production Engineering: will increase pc of that type
+  - by 15%?
 
 Prototyping
 -----------
@@ -94,4 +98,8 @@ up, you won't be caught in searchlights, nor even silhouetted against
 a lit-up cloud etc.); also navigation might be more precise, at least
 on moonlit nights.  Unfortunately, attempts to make altitude affect
 range didn't go so well (can't balance the Whitley properly) so we
-might have to do without that piece.
+might have to do without that piece.  (We could just cop out by
+reducing range by a fixed factor when flying low, with the variable
+effect residing in things like `manu_pen` vs. flak `evade_factor` and
+low-level map-reading (requires high crew skill) vs. navaids at
+20,000ft.)
