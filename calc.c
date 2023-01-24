@@ -55,7 +55,7 @@ static void design_warning(struct bomber *b, const char *format, ...)
 
 const struct bomber *mod_ancestor(const struct bomber *b)
 {
-	if (!b->parent || b->refit < REFIT_MOD)
+	if (!b->parent || b->refit < REFIT_MOD || b->parent == b)
 		return b;
 	return mod_ancestor(b->parent);
 }

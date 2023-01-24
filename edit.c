@@ -1382,10 +1382,9 @@ static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
 static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		     const struct entities *ent);
 
-static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
+static int edit_refit(const struct bomber *b, struct tech_numbers *tn,
 		      const struct entities *ent)
 {
-	struct tech_numbers tn2 = *tn;
 	struct bomber b2 = *b;
 	int c;
 
@@ -1404,21 +1403,21 @@ static int edit_refit(const struct bomber *b, const struct tech_numbers *tn,
 		case 'k':
 		case 'K':
 			b2.refit = REFIT_MARK;
-			calc_bomber(&b2, &tn2);
+			calc_bomber(&b2, tn);
 			putchar('>');
-			return edit_loop(&b2, &tn2, ent);
+			return edit_loop(&b2, tn, ent);
 		case 'o':
 		case 'O':
 			b2.refit = REFIT_MOD;
-			calc_bomber(&b2, &tn2);
+			calc_bomber(&b2, tn);
 			putchar('>');
-			return edit_loop(&b2, &tn2, ent);
+			return edit_loop(&b2, tn, ent);
 		case 'd':
 		case 'D':
 			b2.refit = REFIT_DOCTRINE;
-			calc_bomber(&b2, &tn2);
+			calc_bomber(&b2, tn);
 			putchar('>');
-			return edit_loop(&b2, &tn2, ent);
+			return edit_loop(&b2, tn, ent);
 		default:
 			putchar('?');
 			break;
@@ -1504,6 +1503,7 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 	dump_bomber_info(b);
 	dump_bomber_calcs(b);
 	printf(help);
+	putchar('>');
 
 	do {
 		c = getchar();
@@ -1660,8 +1660,16 @@ int editor(struct bomber *b, struct tech_numbers *tn,
 		fprintf(stderr, "Failed to enable cbreak mode on tty\n");
 		return rc;
 	}
-	rc = edit_loop(b, tn, ent);
-	putchar('\n');
+	do {
+		rc = edit_loop(b, tn, ent);
+		putchar('\n');
+		if (b->parent && b->parent != b) /* can't happen */
+			fprintf(stderr, "Left edit_loop with refit parent\n");
+		b->parent = NULL;
+		b->refit = REFIT_FRESH;
+		memset(&b->dice, 0, sizeof(b->dice));
+	} while (!rc);
+
 	if (disable_cbreak_mode(&cooked))
 		fprintf(stderr, "Failed to disable cbreak mode on tty\n");
 	return rc;
