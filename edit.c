@@ -283,8 +283,8 @@ static void dump_bomber_calcs(struct bomber *b)
 	       b->cruise_alt * 1000.0f);
 	printf("Service ceiling: %.0fft; range: %.0fmi (%.1fhr); initial climb %.0ffpm\n",
 	       b->ceiling * 1000.0f, b->range, b->tanks.hours, b->init_climb);
-	printf("Ratings: defn %.1f/%.1f; fail %.1f; svp %.1f; accu %.1f\n",
-	       b->defn[0], b->defn[1], b->fail * 100.0f,
+	printf("Ratings: defn %.1f/%.1f (flak %.1f); fail %.1f; svp %.1f; accu %.1f\n",
+	       b->defn[0], b->defn[1], b->flak_factor, b->fail * 100.0f,
 	       b->serv * 100.0f, b->accu * 100.0f);
 	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.2f))\n",
 	       b->roll_pen, b->turn_pen, b->evade_factor, b->vuln, b->tanks.ratio);
