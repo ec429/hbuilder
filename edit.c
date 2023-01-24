@@ -1493,6 +1493,12 @@ static int do_load(struct bomber *b, const struct entities *ent)
 	return rc;
 }
 
+static int do_unrandomise(struct bomber *b)
+{
+	memset(&b->dice, 0, sizeof(b->dice));
+	return 0;
+}
+
 static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		     const struct entities *ent)
 {
@@ -1629,6 +1635,14 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 'y':
 		case 'Y':
 			rc = do_randomise(b);
+			if (!rc)
+				putchar('>');
+			break;
+		case 'z':
+		case 'Z':
+			if (b->refit)
+				break;
+			rc = do_unrandomise(b);
 			if (!rc)
 				putchar('>');
 			break;
