@@ -557,7 +557,7 @@ static int edit_guns(struct bomber *b, struct tech_numbers *tn,
 			putchar('>');
 			return 0;
 		}
-		if (c == 'Z') {
+		if (c == '-') {
 			for (i = LXN_NOSE; i < LXN_COUNT; i++) {
 				b->turrets.typ[i] = NULL;
 				if (b->refit < REFIT_MOD)
@@ -1240,7 +1240,7 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 	for (i = 0; i < ent->nmanf; i++)
 		if (b->manf == ent->manf[i])
 			printf("M%c", i + '1');
-	printf("TZ");
+	printf("T-");
 	printf("F%c", b->fuse.typ + '1');
 	printf("L%cLNZ", b->elec.esl + '1');
 	for (i = 0; i < NA_COUNT; i++)

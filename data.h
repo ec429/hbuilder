@@ -14,6 +14,7 @@ enum turret_location {
 	LXN_WAIST,
 	LXN_VENTRAL,
 	LXN_CHIN,
+	LXN_FIXED,
 
 	LXN_COUNT
 };

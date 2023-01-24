@@ -182,7 +182,8 @@ static int calc_turrets(struct bomber *b)
 		t->drag += g->drg * tn->gdf;
 		tare = g->twt + m->twt * tn->gtf / 100.0f;
 		t->tare += tare;
-		t->ammo += g->gun * tn->gam;
+		/* Fixed guns generally carry far fewer rounds */
+		t->ammo += g->gun * tn->gam * (i == LXN_FIXED ? 0.5 : 1.0);
 		t->serv *= 1.0f - g->srv / 1000.0f;
 		t->cost += 3.0f * tare + g->gun * tn->gcf / 10.0f + g->gun * tn->gac / 10.0f;
 		for (j = 0; j < GC_COUNT; j++)
@@ -299,7 +300,15 @@ static int calc_crew(struct bomber *b)
 			c->bn += m->gun ? 0.75f : 1.0f;
 		if (m->pos == CCLASS_B)
 			c->bn += m->gun ? 0.45f : 0.6f;
-		if (m->pos == CCLASS_G) {
+		if (m->pos == CCLASS_P && b->turrets.typ[LXN_FIXED] && !b->turrets.gas[LXN_FIXED]) {
+			if (b->turrets.typ[LXN_FIXED]->ocp != 2) {
+				design_warning(b, "Bad turret %s, LXN_FIXED but OCP=%d\n",
+					       b->turrets.typ[LXN_FIXED]->ident,
+					       b->turrets.typ[LXN_FIXED]->ocp);
+			}
+			c->gunners++;
+			b->turrets.gas[LXN_FIXED] = true;
+		} else if (m->pos == CCLASS_G) {
 			c->gunners++;
 		} else if (m->gun) {
 			if (m->pos == CCLASS_W) {
@@ -316,7 +325,7 @@ static int calc_crew(struct bomber *b)
 						continue;
 					switch (m->pos) {
 					case CCLASS_P:
-						if (!t->ocp)
+						if (t->ocp != 1)
 							continue;
 						break;
 					case CCLASS_N:
