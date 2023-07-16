@@ -703,7 +703,7 @@ static int calc_rely(struct bomber *b)
 static int calc_combat(struct bomber *b)
 {
 	unsigned int sch;
-	float sgf;
+	float sgf, lbb;
 
 	b->roll_pen = powf(b->wing.ar, 0.8f) * 0.7f;
 	b->turn_pen = sqrt(max(b->wing.wl - b->manf->tpl, 0.0f));
@@ -733,11 +733,13 @@ static int calc_combat(struct bomber *b)
 	/* bn of 1.45 -> .24
 	 * speed of 210 -> .124; 150 -> .101; 340 -> .165.
 	 * esl of High -> .17; Stable -> .208.
+	 * light bomber bonus: 15k -> .04; 7k5 -> .09
 	 */
+	lbb = max(21000 - b->gross, 0.0f) / 150000.0f;
 	b->accu = sqrt(b->crew.bn) * b->crew.es * 0.2f +
 		  powf(b->cruise_spd, 0.6f) / 200.0f +
 		  sqrt(1.0f + b->elec.esl) * 0.12f +
-		  (b->bay.csbs ? 0.12f : 0.0f);
+		  (b->bay.csbs ? 0.12f : 0.0f) + lbb;
 	b->accu += b->dice.accu / 100.0f;
 	return 0;
 }
