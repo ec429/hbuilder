@@ -410,7 +410,8 @@ static int calc_bombbay(struct bomber *b)
 		  (a->csbs ? 90.0f : 20.0f);
 	a->cost = a->csbs ? 1200.0f : 0.0f;
 	a->cookie = a->girth == BB_COOKIE ||
-		    (a->girth == BB_MEDIUM && tn->bmc);
+		    (a->girth == BB_MEDIUM && tn->bmc &&
+		     b->fuse.typ != FT_SLENDER);
 	return 0;
 }
 
