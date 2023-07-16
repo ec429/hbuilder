@@ -714,7 +714,7 @@ static int calc_combat(struct bomber *b)
 			       0.45) *
 			  (1.0f - 0.3f / max(b->manu_pen - 4.5f, 0.5f));
 	b->vuln = (b->engines.vuln + b->fuse.vuln) *
-		  max(3.8f - sqrt(b->crew.dc), 1.0f) +
+		  max(3.8f - sqrt(b->crew.dc * b->crew.es), 1.0f) +
 		  b->tanks.vuln;
 	b->vuln *= (100 + b->dice.vuln) / 100.0f;
 	b->flak_factor = b->vuln * 3.0f *
