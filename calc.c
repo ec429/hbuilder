@@ -605,22 +605,24 @@ static float airspeed(const struct bomber *b, float alt)
 	return (m - b->wing.drag) / (2.0f * a);
 }
 
+#define ALTITUDE_STEP	200	// feet
+
 static int calc_ceiling(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
-	unsigned int alt; // units of 500ft
+	unsigned int alt; // units of ALTITUDE_STEP ft
 	float tim = 0; // minutes
 
-	for (alt = 0; alt < 70; alt++) {
-		float c = climb_rate(b, alt * 0.5f);
+	for (alt = 0; alt * ALTITUDE_STEP < 35000; alt++) {
+		float c = climb_rate(b, alt * (ALTITUDE_STEP * 1e-3));
 
 		if (c < 480.0f)
 			break;
 		if (tim > tn->clt)
 			break;
-		tim += 500.0f / c;
+		tim += ALTITUDE_STEP / c;
 	}
-	b->ceiling = alt * 0.5f;
+	b->ceiling = alt * (ALTITUDE_STEP * 1e-3);
 	return 0;
 }
 
