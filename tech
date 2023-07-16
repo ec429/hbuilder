@@ -23,8 +23,11 @@ SCF:FTN=80:FTT=60:FTS=50:FCN=220:FCT=300:FCS=140:FWT=125:r=RFF:n=Fuselage Stress
 LWW:WTF=90:WCF=120:n=Lightweight Wings:y=1940:m=9:d=Reduces weight of wings.
 ISW:WTS=145:WTC=120:WTF=110:WCF=115:r=LWW:n=Improved Wing Structures:y=1941:m=4:d=Reduces weight of large wings.
 SCW:WTS=140:WTC=110:WTF=165:WCF=135:r=ISW:n=Wing Stressing Calcs:y=1942:m=9:d=Further reduces weight of large wings.
-RFA:WLD=114:n=Refined Aerofoils:y=1943:m=2:d=Improves lift-to-drag ratio of wings.
+AER:WLD=111:n=Improved Aerofoils:y=1940:m=12:d=Improves lift-to-drag ratio of wings.
+RFA:WLD=115:r=AER:n=Refined Aerofoils:y=1943:m=2:d=Further improves lift-to-drag ratio of wings.
 SST:SFT=110:SFV=50:SFC=125:n=Self-Sealing Tanks:y=1939:m=9:d=Allows installing self-sealing fuel tanks to reduce losses.
+FUG:FGV=72:n=Fuel for Geodetics:y=1940:m=4:d=Reduces vulnerability of fuel tanks in geodetic wings.
+ISS:SFV=35:r=SST:n=Improved Self-Sealing:y=1940:m=8:d=Increases the effectiveness of self-sealing fuel tanks.
 LFT:FUT=100:FUC=81:n=Lightweight Fuel Tanks:y=1940:m=11:d=Reduces the empty weight of fuel tankage.
 IFT:FUT=90:FUV=90:FUC=96:r=LFT:n=Improved Fuel Tanks:y=1942:m=3:d=Lighter, less vulnerable fuel tankage.
 HPE:ESL=1:n=High Power Electrics:y=1940:m=4:d=High-power electrics allow various aids to navigation.

@@ -1334,8 +1334,10 @@ static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
 			continue;
 		if (i - j < 26)
 			l = (i - j) + 'A';
-		else
+		else if (i - j < 56)
 			l = (i - j - 26) + 'a';
+		else
+			l = (i - j - 56) + '!';
 		s = ' ';
 		if (t->unlocked) {
 			if (t->have_reqs)
@@ -1365,11 +1367,16 @@ static int edit_tech(struct tech_numbers *tn, const struct entities *ent)
 			t = ent->tech[i + j];
 		} else {
 			i = c - 'a';
-			if (i < 0 || i + j + 26 >= ent->ntech) {
-				putchar('?');
-				continue;
+			if (i < 0 || i >= 30) {
+				i = c - '!';
+				if (i < 0 || i + j + 56 >= ent->ntech) {
+					putchar('?');
+					continue;
+				}
+				t = ent->tech[i + j + 56];
+			} else {
+				t = ent->tech[i + j + 26];
 			}
-			t = ent->tech[i + j + 26];
 		}
 		t->unlocked = !t->unlocked;
 		putchar('>');
