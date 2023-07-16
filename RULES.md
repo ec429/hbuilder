@@ -103,3 +103,39 @@ reducing range by a fixed factor when flying low, with the variable
 effect residing in things like `manu_pen` vs. flak `evade_factor` and
 low-level map-reading (requires high crew skill) vs. navaids at
 20,000ft.)
+
+Developing a four-engined heavy from scratch costs around a million
+funds; a typical mark upgrade is about 150k.  (A minor mark upgrade
+for a medium bomber (say, Wellington Ic) is more like 55k, a major
+mark (like the III) nearer 80k, a mod maybe 25-30k.)  Thus a typical
+roughly-like-historical playthrough would spend something like four
+million funds on prototyping and tooling over the first four years of
+the war; that's the equivalent of 100 Lancasters.  So there needs to
+be some extra budget available to make up for that; a very rough
+estimate suggests 10% extra funding just about covers it.
+
+Legacy Fleet
+------------
+
+In the standard game, you start with 123 BLEN, 147 WHIT (of which 50
+are on OTUs), 83 HAMP and 73 WLNG; a total of 426 a/c (376 in active
+squadrons) with a combined build cost of just over 3.5 million funds.
+The approximate cost and time to develop each of these types under
+the builder system would be:
+* Blenheim IV: 250k, 106 days
+* Whitley IV: 450k, 166 days
+  - Whitley V: 60k, 107 days
+* Hampden: 410k, 135 days
+* Wellington Ia: 560k, 151 days
+When playing with the builder, first you design your 'rearmament'
+types, with y=0 tech only (these correspond to Blenheims and Whitley
+IIIs or maybe IVs).  You get 2.25M funds to tool and build these a/c;
+anything left unspent is wasted.
+Then the y=2 techs unlock, allowing you to design 'legacy' types (and
+improved marks/mods of your 'rearmament' types).  You get another 3M
+funds to tool and build.  Initial production caps for these types are
+lower than for the 'rearmament' types.
+Then you create squadrons for your various types; bombers (except any
+you assign to Training Units) will be distributed roughly evenly
+across all squadrons using that type, then crews will be assigned by
+the usual method.
