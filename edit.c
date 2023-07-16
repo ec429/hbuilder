@@ -288,9 +288,9 @@ static void dump_bomber_calcs(struct bomber *b)
 	       b->serv * 100.0f, b->accu * 100.0f);
 	printf("\t(roll %.1f, turn %.1f, evade %.1f, vuln %.2f (fr %.2f))\n",
 	       b->roll_pen, b->turn_pen, b->evade_factor, b->vuln, b->tanks.ratio);
-	printf("Cost: %.0f funds (core %.0f, fuse %.0f, wing %.0f, eng %.0f)\n",
+	printf("Cost: %.0f funds (core %.0f, fuse %.0f, wing %.0f (stress %.2f), eng %.0f)\n",
 	       b->cost, b->core_cost, b->fuse.cost, b->wing.cost,
-	       b->engines.cost);
+	       b->stress_factor, b->engines.cost);
 	printf("\t(tanks %.0f, gun %.0f, elec %.0f)\n",
 	       b->tanks.cost, b->turrets.cost, b->elec.cost);
 	printf("Prototype in %.0f days for %.0f funds\n",
@@ -1182,6 +1182,35 @@ static int edit_tanks(struct bomber *b, struct tech_numbers *tn)
 	return -EIO;
 }
 
+static int edit_mtow(struct bomber *b, struct tech_numbers *tn)
+{
+	unsigned int v;
+	int rc;
+
+	if (b->refit >= REFIT_MOD) {
+		fprintf(stderr, "%s refit cannot change max take-off weight.\n", describe_refit(b->refit));
+		putchar('?');
+		return -EINVAL;
+	}
+
+	do {
+		rc = edit_uint(&v);
+		if (rc == -EIO)
+			return rc;
+		if (rc)
+			printf("Enter max take-off weight in lb, 1 for auto or 0 to cancel\n");
+	} while (rc);
+
+	if (v == 1) {
+		b->user_mtow = false;
+	} else if (v) {
+		b->mtow = v;
+		b->user_mtow = true;
+	}
+	putchar('>');
+	return 0;
+}
+
 static int auto_doctrine(struct bomber *b, struct tech_numbers *tn)
 {
 	unsigned int mptow, mts, mtg;
@@ -1291,6 +1320,10 @@ static int dump_block(struct bomber *b, const struct entities *ent)
 	printf("U%c", b->tanks.sst ? 'S' : 'R');
 	printf("UU%u\n", b->tanks.hlb);
 	printf("UP%u\n", b->tanks.pct);
+	if (b->user_mtow)
+		printf("G%u\n", b->mtow);
+	else
+		printf("G1\n");
 	return 0;
 }
 
@@ -1579,6 +1612,10 @@ static int edit_loop(struct bomber *b, struct tech_numbers *tn,
 		case 'u':
 		case 'U':
 			rc = edit_tanks(b, tn);
+			break;
+		case 'g':
+		case 'G':
+			rc = edit_mtow(b, tn);
 			break;
 		case 'd':
 		case 'D':

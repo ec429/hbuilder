@@ -193,9 +193,11 @@ struct bomber {
 	float tare;
 	float gross;
 	unsigned int mtow; // structure stressed for this; mod/doc can't exceed
+	bool user_mtow; // user specified mtow, don't recalculate
 	float overgross;
 	float drag;
 	float core_cost;
+	float stress_factor;
 	float cost;
 	float takeoff_spd;
 	float ceiling; /* thousands ft */

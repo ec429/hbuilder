@@ -171,6 +171,11 @@ For reference, from Lincolnshire to Berlin is about 600 miles as the crow
  flies (unlike the bomber, which follows a less straight route to confuse
  the defences and thus has a little more distance to cover).
 
+[G] lets you enter a custom max gross take-off weight in lb, allowing you
+to stress the structure for higher loads than the current doctrine.  Or you
+can enter 1 to discard a custom m.g.t.o.w. and use the gross weight of the
+design as currently loaded.
+
 [V] will dump the currently applicable limits to take-off weight and speed.
 
 [A]uto-doctrine (only available in Doctrine refits) will set the bomb load
@@ -215,7 +220,7 @@ The following changes can be made in marks but not mods:
 * add new Crew
 * change eLectric supply level
 * change fUel capacity
-* m.g.t.o.w. is permitted to increase
+* change max Gross take-off weight
 
 The following changes can be made even in mods:
 * upgrade Engine on previously overbuilt mounts

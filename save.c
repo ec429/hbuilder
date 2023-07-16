@@ -80,7 +80,7 @@ int save_design(FILE *f, const struct bomber *b)
 	fputc('\n', f);
 	fprintf(f, "TAN=%u:PCT=%u:SST=%d\n", b->tanks.hlb, b->tanks.pct,
 		b->tanks.sst ? 1 : 0);
-	fprintf(f, "MTW=%u\n", b->mtow);
+	fprintf(f, "MTW=%u:USR=%u\n", b->mtow, b->user_mtow ? 1 : 0);
 	fprintf(f, "RFL=%u\n", b->refit);
 	fprintf(f, "RND=%u:DRG=%d:SRV=%d:VUL=%d:MNU=%d:ACC=%d\n",
 		b->dice.rolled ? 1 : 0, b->dice.drag, b->dice.serv,
@@ -316,6 +316,7 @@ LOADER_UINT(tan, tanks.hlb);
 LOADER_UINT(pct, tanks.pct);
 LOADER_BOOL(sst, tanks.sst);
 LOADER_UINT(mtw, mtow);
+LOADER_BOOL(usr, user_mtow);
 LOADER_UINT(rfl, refit);
 
 LOADER_BOOL(rnd, dice.rolled);
@@ -363,6 +364,7 @@ struct loadkey {
 	{"PCT", load_pct},
 	{"SST", load_sst},
 	{"MTW", load_mtw},
+	{"USR", load_usr},
 	{"RFL", load_rfl},
 	{"RND", load_rnd},
 	{"DRG", load_drg},

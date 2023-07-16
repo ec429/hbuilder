@@ -637,13 +637,14 @@ static int calc_perf(struct bomber *b)
 		  b->engines.tare * tn->etf / 100.0f;
 	b->gross = b->tare + b->tanks.mass + b->turrets.ammo +
 		   b->crew.gross + b->bay.load;
-	if (b->refit < REFIT_MOD) {
-		b->mtow = ceil(b->gross);
-	} else {
-		b->mtow = b->parent->mtow;
-		if (floor(b->gross) > b->mtow)
-			design_error(b, "Exceeded MTOW of %ulb\n", b->mtow);
+	if (!b->user_mtow) {
+		if (b->refit < REFIT_MOD)
+			b->mtow = ceil(b->gross);
+		else
+			b->mtow = b->parent->mtow;
 	}
+	if (floor(b->gross) > b->mtow)
+		design_error(b, "Exceeded MTOW of %ulb\n", b->mtow);
 	/* Gross weight with everything filled up to maximum.
 	 * Used for development time calculations.
 	 */
@@ -752,7 +753,8 @@ static int calc_cost(struct bomber *b)
 		       (b->engines.number > 2 ? 2.0f : 1.0f);
 	structure_cost = b->core_cost + b->bay.cost + b->fuse.cost +
 			 b->wing.cost;
-	structure_cost *= powf(b->mtow * 0.5f / b->tare, 2);
+	b->stress_factor = powf(b->mtow * 0.5f / b->tare, 2);
+	structure_cost *= b->stress_factor;
 	b->cost = b->engines.cost + b->turrets.cost + structure_cost +
 		  b->elec.cost + b->elec.ncost + b->tanks.cost;
 	return 0;
