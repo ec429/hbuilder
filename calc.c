@@ -183,7 +183,7 @@ static int calc_turrets(struct bomber *b)
 		tare = g->twt + m->twt * tn->gtf / 100.0f;
 		t->tare += tare;
 		/* Fixed guns generally carry far fewer rounds */
-		t->ammo += g->gun * tn->gam * (i == LXN_FIXED ? 0.5 : 1.0);
+		t->ammo += g->gun * tn->gam * (i == LXN_FIXED ? 0.25 : 1.0);
 		t->serv *= 1.0f - g->srv / 1000.0f;
 		t->cost += 3.0f * tare + g->gun * tn->gcf / 10.0f + g->gun * tn->gac / 10.0f;
 		for (j = 0; j < GC_COUNT; j++)
