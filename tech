@@ -55,7 +55,7 @@ FCT:t=Dor5:t=Tai5:r=QUT:n=.50 Caliber Turret:y=1943:m=5:d=Unlocks dorsal and rea
 GLT:t=Aglt:r=QUT:r=SVS:n=Gun-Laying Radar:y=1944:m=5:d=Unlocks the Rear turret (radar).
 IHY:GTF=60:GCF=105:n=Improved Hydraulics:y=1940:m=9:d=Reduces the weight of gun turrets.
 TUF:GDF=18:n=Turret Fairings:y=1941:m=8:d=Reduces the drag of gun turrets.
-LAT:GAM=160:GAC=24:n=Lightweight Ammo Tracks:y=1941:m=2:d=Reduces the per-gun weight associated with ammunition.
+LAT:GAM=135:GAC=24:n=Lightweight Ammo Tracks:y=1941:m=2:d=Reduces the per-gun weight associated with ammunition.
 GRL:r=QUT:n=Gransden Lodge Turret:y=1942:m=10:d=Unimplemented feature.
 HCB:BTM=90:BMC=1:n=High Capacity Bombs:y=1940:m=1:d=Medium-girth bomb bays are lighter, and can carry cookies externally.
 BCE:BTS=55:n=Bomb Cells:y=1939:m=12:d=Reduced structure weight for small-girth bomb bays.
