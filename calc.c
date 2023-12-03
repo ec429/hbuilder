@@ -141,6 +141,7 @@ static int calc_turrets(struct bomber *b)
 {
 	const struct tech_numbers *tn = &b->tn;
 	struct turrets *t = &b->turrets;
+	unsigned int fixed_gunners = 0;
 	unsigned int i, j;
 
 	t->need_gunners = 0;
@@ -179,6 +180,8 @@ static int calc_turrets(struct bomber *b)
 			design_error(b, "%s requires slab-sided fuselage!\n",
 				     g->name);
 		t->need_gunners++;
+		if (i == LXN_FIXED)
+			fixed_gunners++;
 		t->drag += g->drg * tn->gdf;
 		tare = g->twt + m->twt * tn->gtf / 100.0f;
 		t->tare += tare;
@@ -189,7 +192,7 @@ static int calc_turrets(struct bomber *b)
 		for (j = 0; j < GC_COUNT; j++)
 			t->gc[j] += g->gc[j] / 10.0f;
 	}
-	if (!t->need_gunners && b->engines.number > tn->ubl)
+	if (t->need_gunners <= fixed_gunners && b->engines.number > tn->ubl)
 		design_error(b, "The Air Ministry will not allow an unarmed bomber of this size!\n");
 	t->serv = 1.0f - t->serv;
 	t->rate[0] = t->rate[1] = 0;

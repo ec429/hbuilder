@@ -103,6 +103,10 @@ Each turret takes up one of six location slots; you cannot add two turrets
  aircraft performance.  Stats for each turret are defined in file `guns`.
 Similarly to engines, you can press [@] to overbuild the mounts for a
  (possibly not-yet-unlocked) turret type.
+There is a seventh location slot, not for turrets, but for fixed forward-
+ firing guns, mounted in the wings and operated by the pilot.  A bomber
+ with only fixed guns will count as 'unarmed' for purposes of the Unarmed
+ Bomber Limit.
 
 [W]ing gives the choice of two sub-modes; press A to set the wing area or
  R to set the aspect ratio.  Then, enter an integer; note that for [R]atio
@@ -211,7 +215,7 @@ The following cannot be changed in refits:
 * Manufacturer
 * number of Engines
 * Wing
-* Bomb load, bomb bay caPacity or Girth
+* Bomb bay caPacity or Girth
 * Fuselage type
 
 The following changes can be made in marks but not mods:
