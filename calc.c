@@ -819,7 +819,7 @@ static int calc_dev(struct bomber *b)
 			}
 		count_crew(&b->parent->crew, pcount);
 		for (i = 0; i < CREW_CLASSES; i++) {
-			unsigned int delta = max(count[i] - pcount[i], 0);
+			unsigned int delta = max((int)(count[i] - pcount[i]), 0);
 
 			add_tproto += 8 * delta;
 			add_tprod += 9 * delta;
