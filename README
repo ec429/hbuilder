@@ -134,8 +134,9 @@ You can set the ca[P]acity higher than the load, to allow increasing the
 Girth determines whether the aircraft can carry High Capacity bombs such as
  the 4,000lb "cookie"; Medium cannot close the doors over a cookie so
  incurs a speed penalty when carrying it (6% in the current Harris code),
- while Small cannot carry it at all.  Selecting a greater girth incurs a
- tare weight penalty.
+ while Small cannot carry it at all (nor can a Medium bay on a Slender
+ fuselage).  A girth of at least Medium is also required to carry naval
+ mines.  Selecting a greater girth incurs a tare weight penalty.
 The Course-Setting bomb sight improves bombing accuracy significantly.
 
 [F]uselage offers a choice of fuselage types, selected with number keys.
